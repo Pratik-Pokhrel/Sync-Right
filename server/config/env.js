@@ -8,6 +8,10 @@ dotenv.config();
 export const ENV = {
   MONGO_URI: process.env.MONGO_URI,
   PORT: process.env.PORT || 5000,
+  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET,
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+  JWT_ACCESS_EXPIRY: process.env.JWT_ACCESS_EXPIRY || "15m",
+  JWT_REFRESH_EXPIRY: process.env.JWT_REFRESH_EXPIRY || "7d",
 };
 
 // Fail fast if any required environment variables are missing
