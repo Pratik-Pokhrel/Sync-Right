@@ -12,6 +12,7 @@ export const ENV = {
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
   JWT_ACCESS_EXPIRY: process.env.JWT_ACCESS_EXPIRY || "15m",
   JWT_REFRESH_EXPIRY: process.env.JWT_REFRESH_EXPIRY || "7d",
+  NODE_ENV: process.env.NODE_ENV || "development", // defaults to development
 };
 
 // Fail fast if any required environment variables are missing
