@@ -12,6 +12,7 @@ const UserSchema = new Schema(
       trim: true,
       minlength: [3, "Username must be at least 3 characters long"],
       maxlength: [30, "Username cannot exceed 30 characters"],
+      index: true, // Create an index on the username field for faster queries
     },
 
     email: {
@@ -21,6 +22,7 @@ const UserSchema = new Schema(
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Please use a valid email address"], // Simple regex for email validation
+      index: true, // Create an index on the email field
     },
 
     password: {
