@@ -68,9 +68,11 @@ export const login = async (req, res, next) => {
         .json({ success: false, message: "Invalid Credentials" });
     }
 
-    const isMatch = await user.ComparePassword(password);
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      rest.status(401).json({ success: false, message: "Invalid Credentials" }); //
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid Credentials" }); //
     }
 
     const accessToken = generateAccessToken(user);

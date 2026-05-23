@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { lowercase, trim } from "zod";
 
 const { Schema } = mongoose; // Destructuring the 'mongoose' object to get the 'Schema' class
 

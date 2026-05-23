@@ -7,13 +7,11 @@ export const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.StartsWith("Bearer ")) {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message: "Unauthorized: No access token provided",
-        });
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: No access token provided",
+      });
     }
 
     const token = authHeader.split(" ")[1]; // Extract the token from the "Bearer <token>" format
@@ -22,12 +20,10 @@ export const protect = async (req, res, next) => {
     try {
       payload = jwt.verify(token, ENV.JWT_ACCESS_SECRET);
     } catch {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message: "Unauthorized: Invalid or expired access token",
-        });
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid or expired access token",
+      });
     }
 
     // Attach user info to the request object for use in subsequent middleware or route handlers
