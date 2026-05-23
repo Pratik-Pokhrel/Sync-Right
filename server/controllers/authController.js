@@ -169,7 +169,7 @@ export const logout = async (req, res, next) => {
   }
 };
 
-// Get Me Function
+// Get Me Function - to let the logged-in user get back their own profile info even if the page is refreshed
 export const getMe = async (req, res) => {
   // req.user is populated by the auth middleware after verifying the access token
   return res.status(200).json({
