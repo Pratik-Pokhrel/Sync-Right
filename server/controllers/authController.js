@@ -53,3 +53,95 @@ export const register = async (req, res, next) => {
     next(error);
   }
 };
+
+// Login Function
+export const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() }).select(
+      "+password",
+    ); // Explicitly select the password field for authentication
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid Credentials" });
+    }
+
+    const isMatch = await user.ComparePassword(password);
+    if (!isMatch) {
+      rest.status(401).json({ success: false, message: "Invalid Credentials" }); //
+    }
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    // Store only the hashed refresh token in the database for security reasons
+    user.refreshToken = hashToken(refreshToken);
+    await user.save();
+
+    // Refresh token is sent as an HTTP-only cookie, while the access token is sent in the response body
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      accessToken,
+      user: user.toSafeObject(), // Send sanitized user object without sensitive fields
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Refresh Token Function
+export const refresh = async (req, res, next) => {
+  try {
+    const token = req.cookies?.refreshToken; // Get the refresh token from the HTTP-only cookie
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No refresh token provided",
+      });
+    }
+
+    // Verify the refresh token's signature and extract the payload
+    let payload;
+    try {
+      payload = jwt.verify(token, ENV.JWT_REFRESH_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired refresh token",
+      });
+    }
+
+    // Check the hashed token matches what's in DB (revocation check)
+    const user = await User.findById(payload.id).select("+refreshToken");
+    if (!user || user.refreshToken !== hashToken(token)) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token revoked or reuse detected",
+      });
+    }
+
+    // Generate new access and refresh tokens
+    const newAccessToken = generateAccessToken(user);
+    const newRefreshToken = generateRefreshToken(user);
+
+    user.refreshToken = hashToken(newRefreshToken); // Update the stored hashed refresh token in the database
+    await user.save();
+
+    res.cookie("refreshToken", newRefreshToken, REFRESH_COOKIE_OPTIONS); // Send the new refresh token as an HTTP-only cookie
+
+    return res.status(200).json({
+      success: true,
+      message: "Token refreshed successfully",
+      accessToken: newAccessToken,
+    });
+
+    // End of refresh token flow
+  } catch (error) {
+    next(error);
+  }
+};
