@@ -145,3 +145,35 @@ export const refresh = async (req, res, next) => {
     next(error);
   }
 };
+
+// Logout Function
+export const logout = async (req, res, next) => {
+  try {
+    const token = req.cookies?.refreshToken; // Get the refresh token from the HTTP-only cookie
+
+    if (token) {
+      // Nullify the stored token -> revokes refresh capability
+      const payload = jwt.decode(token); // Decode the token to get the user ID without verifying the signature, since we just want to identify the user for logout
+      if (payload?.id) {
+        await User.findByIdAndUpdate(payload.id, { refreshToken: null }); // Clear the stored hashed refresh token in the database to effectively log the user out
+      }
+    }
+
+    res.clearCookie("refreshToken", REFRESH_COOKIE_OPTIONS); // Clear the refresh token cookie on the client side
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get Me Function
+export const getMe = async (req, res) => {
+  // req.user is populated by the auth middleware after verifying the access token
+  return res.status(200).json({
+    success: true,
+    user: req.user,
+  });
+};
