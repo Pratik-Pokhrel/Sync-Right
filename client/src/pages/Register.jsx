@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 import FormInput from '../components/FormInput';
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -11,7 +12,9 @@ const Register = () => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,6 +27,7 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setFieldErrors({});
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -32,15 +36,27 @@ const Register = () => {
     }
 
     try {
-      const response = await axios.post('/api/auth/register', {
+      const response = await api.post('/register', {
         username: formData.username,
         email: formData.email,
         password: formData.password
       });
-      // Handle successful registration (redirect to login, etc.)
-      console.log('Registration successful:', response.data);
+
+      // Show success message
+      setSuccess(true);
+
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      // Handle field-level errors from backend
+      if (err.response?.data?.errors) {
+        setFieldErrors(err.response.data.errors);
+        setError(err.response.data.message || 'Registration failed');
+      } else {
+        setError(err.response?.data?.message || 'Registration failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -54,13 +70,19 @@ const Register = () => {
           <p className="text-amber-700">Create your account</p>
         </div>
 
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+            Registration successful! Redirecting to login...
+          </div>
+        )}
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" disabled={success}>
           <FormInput
             label="Username"
             type="text"
@@ -70,6 +92,7 @@ const Register = () => {
             onChange={handleChange}
             placeholder="Choose a username"
             required
+            error={fieldErrors.username}
           />
 
           <FormInput
@@ -81,6 +104,7 @@ const Register = () => {
             onChange={handleChange}
             placeholder="Enter your email"
             required
+            error={fieldErrors.email}
           />
 
           <FormInput
@@ -107,10 +131,10 @@ const Register = () => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || success}
             className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-medium py-3 px-4 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? 'Creating Account...' : success ? 'Account Created!' : 'Create Account'}
           </button>
         </form>
 

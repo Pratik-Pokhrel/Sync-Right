@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../utils/api';
+import { tokenStorage } from '../utils/tokenStorage';
 import FormInput from '../components/FormInput';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -24,9 +26,14 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/login', formData);
-      // Handle successful login (store token, redirect, etc.)
-      console.log('Login successful:', response.data);
+      const response = await api.post('/login', formData);
+      const { accessToken, user } = response.data;
+
+      // Store the access token
+      tokenStorage.setToken(accessToken);
+
+      // Redirect to dashboard or home page
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {
