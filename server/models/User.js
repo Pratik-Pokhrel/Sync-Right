@@ -58,9 +58,8 @@ const UserSchema = new Schema(
 // Hash password before saving the user document to the database
 //.pre() is a Mongoose middleware function that runs before the 'save' operation is executed on a document.
 UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next(); // Only hash the password if it has been modified (or is new)
+  if (!this.isModified("password")) return; // Only hash the password if it has been modified (or is new)
   this.password = await bcrypt.hash(this.password, 12); // Hash the password with a salt round of 12
-  next();
 });
 
 //Instance method to compare the provided password with the hashed password stored in the database
