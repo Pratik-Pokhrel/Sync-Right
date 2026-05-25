@@ -25,8 +25,13 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bo
 app.use(cookieParser()); // Parse cookies from incoming requests and attach them to req.cookies, required for handling refresh tokens stored in cookies
 app.use(morgan("dev")); // Log HTTP requests in development mode
 
+// In production, enclose the morgan logger in a condition to avoid logging sensitive information and to improve performance
+// if (ENV.NODE_ENV === "production") {
+//   app.use(morgan("combined")); // Use a more concise logging format in production
+// }
+
 // All the routes
-app.use("/", authRoutes);
+app.use("/auth", authRoutes);
 
 // Health check route - useful for monitoring and testing if the server is running
 app.get("/health", (req, res) => {

@@ -7,12 +7,17 @@ dotenv.config();
 
 export const ENV = {
   MONGO_URI: process.env.MONGO_URI,
-  PORT: process.env.PORT || 5000,
+  PORT: process.env.PORT || 8000,
   JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET,
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
   JWT_ACCESS_EXPIRY: process.env.JWT_ACCESS_EXPIRY || "15m",
   JWT_REFRESH_EXPIRY: process.env.JWT_REFRESH_EXPIRY || "7d",
   NODE_ENV: process.env.NODE_ENV || "development", // defaults to development
+
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
 };
 
 // Fail fast if any required environment variables are missing

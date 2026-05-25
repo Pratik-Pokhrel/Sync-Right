@@ -10,7 +10,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 p-8">
+    <div className="min-h-screen bg-linear-to-br from-amber-50 to-orange-100 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white/80 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg p-8 mb-6">
           <div className="flex justify-between items-center">

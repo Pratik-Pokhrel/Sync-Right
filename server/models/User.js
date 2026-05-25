@@ -26,7 +26,9 @@ const UserSchema = new Schema(
 
     password: {
       type: String,
-      required: true,
+      required: function () {
+        return this.authProvider === "local"; // Only require a password if the user is registering with local authentication, not with Google OAuth
+      },
       minlength: [8, "Password must be at least 8 characters long"],
       maxlength: [128, "Password cannot exceed 128 characters"],
       select: false, // Exclude the password field from query results by default for security reasons
@@ -47,6 +49,23 @@ const UserSchema = new Schema(
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+
+    googleId: {
+      type: String,
+      default: null,
+      index: true,
+    },
+
+    avatar: {
+      type: String,
+      default: null,
+    },
+
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
   },
 
