@@ -48,7 +48,7 @@ export const googleCallback = async (req, res, next) => {
       audience: ENV.GOOGLE_CLIENT_ID,
     });
 
-    const { sub: googleId, email, name } = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = ticket.getPayload();
 
     //Find either the existing user or create a new one
     let user = await User.findOne({
