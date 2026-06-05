@@ -32,7 +32,7 @@ app.use(morgan("dev")); // Log HTTP requests in development mode
 // }
 
 // All the routes
-app.use("/auth", authRoutes);
+app.use("/auth", authRoutes); // auth-related routes like /register, /login and so on
 app.use("/auth", oauthRoutes); // new -> /auth/google, /auth/google/callback
 
 // Health check route - useful for monitoring and testing if the server is running
