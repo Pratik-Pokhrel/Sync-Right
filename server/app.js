@@ -8,6 +8,7 @@ import { ENV } from "./config/env.js";
 import authRoutes from "./routes/auth.routes.js";
 import oauthRoutes from "./routes/oauth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
 
@@ -34,6 +35,8 @@ app.use(morgan("dev")); // Log HTTP requests in development mode
 // All the routes
 app.use("/auth", authRoutes); // auth-related routes like /register, /login and so on
 app.use("/auth", oauthRoutes); // new -> /auth/google, /auth/google/callback
+
+app.use("/admin", adminRoutes); // admin-related routes like /admin/users, /admin/users/:id/role and so on
 
 // Health check route - useful for monitoring and testing if the server is running
 app.get("/health", (req, res) => {

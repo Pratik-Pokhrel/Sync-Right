@@ -1,3 +1,4 @@
+// middleware to check if the authenticated user has the required role(s) to access certain admin routes
 // (...roles) -> can be one or more than one role, in case there might be new roles introduced later on
 export const roleAuthorize =
   (...roles) =>
