@@ -79,3 +79,69 @@ export const setUserStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+// PATCH /admin/users/:id/role -> promote to admin or demote to user
+// body: { role: "admin" | "user" }
+// export const setUserRole = async (req, res, next) => {
+//   try {
+//     const { role } = req.body;
+
+//     if (!["admin", "user"].includes(role)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Role must be 'admin' or 'user'",
+//       });
+//     }
+
+//     // Prevent self-demotion (admin removing their own admin role)
+//     if (req.params.id === req.user._id.toString()) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "You cannot change your own role",
+//       });
+//     }
+
+//     const user = await User.findByIdAndUpdate(
+//       req.params.id,
+//       { role },
+//       { new: true, runValidators: true }
+//     );
+
+//     if (!user) {
+//       return res.status(404).json({ success: false, message: "User not found" });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: `User role updated to '${role}'`,
+//       data: user,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+// DELETE /admin/users/:id -> permanently delete a user account
+export const deleteUser = async (req, res, next) => {
+  try {
+    if (req.params.id === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot delete your own account as an admin",
+      });
+    }
+
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
