@@ -14,7 +14,7 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    const token = authHeader.split(" ")[1]; // Extract the token from the "Bearer <token>" format
+    const token = authHeader.split(" ")[1]; // Extract just the token from the "Bearer <token>" format
 
     let payload;
     try {

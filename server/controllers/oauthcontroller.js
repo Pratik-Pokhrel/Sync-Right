@@ -1,5 +1,6 @@
 import { OAuth2Client } from "google-auth-library";
 import { ENV } from "../config/env.js";
+
 import User from "../models/User.js";
 import {
   generateAccessToken,
@@ -12,6 +13,13 @@ const googleClient = new OAuth2Client(
   ENV.GOOGLE_CLIENT_SECRET,
   ENV.GOOGLE_REDIRECT_URI,
 );
+
+// const ACCESS_COOKIE_OPTIONS = {
+//   httpOnly: true,
+//   secure: ENV.NODE_ENV === "production", // only send cookie over HTTPS in production
+//   sameSite: "Strict",
+//   maxAge: 15 * 60 * 1000, // 15 minutes in milliseconds
+// };
 
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -85,6 +93,11 @@ export const googleCallback = async (req, res, next) => {
     // Redirect to frontend with accessToken in query param
     // Frontend grabs it from URL, stores in memory, then clears the URL
     res.redirect(`${ENV.CLIENT_URL}/oauth/callback?token=${accessToken}`);
+
+    // res.cookie("accessToken", accessToken, ACCESS_COOKIE_OPTIONS);
+    // res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    // res.redirect(`${ENV.CLIENT_URL}/oauth/callback`);
+    // clean URL, no token
   } catch (error) {
     next(error);
   }
