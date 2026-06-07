@@ -35,7 +35,7 @@ const SessionSchema = new Schema(
     },
 
     duration: {
-      type: Number / 60, // duration in minutes
+      type: Number, // Duration in seconds
       default: null,
     },
   },

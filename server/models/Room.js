@@ -62,10 +62,12 @@ const RoomSchema = new Schema(
 );
 
 // Hash room password before save —> only if set and modified
-RoomSchema.pre("save", async function (next) {
-  if (!this.isModified("password") || !this.password) return next();
+RoomSchema.pre("save", async function () {
+  // If password isn't modified or doesn't exist (public room), just return to proceed
+  if (!this.isModified("password") || !this.password) return;
+
+  // Otherwise, hash the password
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 // Instance method -? verify room password on join
