@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { tokenStorage } from '../utils/tokenStorage';
 
 const Dashboard = () => {
@@ -18,12 +18,26 @@ const Dashboard = () => {
               <h1 className="text-4xl font-serif text-amber-900 mb-2">Welcome to Sync-Right</h1>
               <p className="text-amber-700">You are successfully logged in</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-            >
-              Logout
-            </button>
+            <div className="space-x-2">
+              {(() => {
+                const user = tokenStorage.getUser();
+                if (user && user.role === 'admin') {
+                  return (
+                    <Link to="/admin" className="bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-md">
+                      Admin Panel
+                    </Link>
+                  );
+                }
+                return null;
+              })()}
+
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
 
