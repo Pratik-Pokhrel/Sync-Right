@@ -3,7 +3,7 @@ import { tokenStorage } from "./tokenStorage";
 
 // Create axios instance with base URL pointing to the backend server
 const api = axios.create({
-  baseURL: "http://localhost:8000/auth",
+  baseURL: "http://localhost:8000",
   withCredentials: true, // Enable sending cookies with requests for refresh token
 });
 

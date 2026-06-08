@@ -26,8 +26,8 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await api.post('/login', formData);
-      const { accessToken, user } = response.data;
+      const response = await api.post('/auth/login', formData);
+      const { accessToken } = response.data;
 
       // Store the access token
       tokenStorage.setToken(accessToken);

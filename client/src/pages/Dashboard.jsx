@@ -19,6 +19,12 @@ const Dashboard = () => {
               <p className="text-amber-700">You are successfully logged in</p>
             </div>
             <div className="space-x-2">
+              <Link
+                to="/rooms"
+                className="bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-md"
+              >
+                Rooms
+              </Link>
               {(() => {
                 const user = tokenStorage.getUser();
                 if (user && user.role === 'admin') {
