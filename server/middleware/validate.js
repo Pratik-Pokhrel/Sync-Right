@@ -54,7 +54,7 @@ const joinRoomSchema = z.object({
 const validate = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.body);
   if (!result.success) {
-    const errors = result.error.errors.map((e) => ({
+    const errors = result.error.issues.map((e) => ({
       field: e.path[0],
       message: e.message,
     }));

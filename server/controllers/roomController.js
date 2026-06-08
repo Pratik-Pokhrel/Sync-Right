@@ -1,7 +1,7 @@
 import Room from "../models/Room.js";
 import Session from "../models/Session.js";
 
-// Helper function
+// HELPER FUNCTION
 // Fetch a room by ID, throws an error if not found
 // select("+password") is called only if password verification is required
 const findRoom = async (roomId, selectPassword = false) => {
@@ -19,11 +19,61 @@ const findRoom = async (roomId, selectPassword = false) => {
   return room;
 };
 
+// HELPER FUNCTION
+
+//Takes a populated room doc (host and participants must be populated with at least the "username" field before calling this)
+// Returns a clean, consistent response shape used by every endpoint
+// 1. roomId - explicit alias for _id (frontend-friendly key)
+// 2. host - { _id, username }
+// 3. participants - [{ _id, username, isHost, label }]
+//    - isHost -> boolean flag for the frontend to use however it wants
+//    - label -> "XYZ (host)" for the host, "XYZ" for every participant
+
+const formatRoom = (room) => {
+  const hostId = room.host._id.toString(); // room.host is populated, so it's an object
+
+  const participants = room.participants.map((p) => {
+    const isHost = p._id.toString() === hostId; // Checks if the current participant is the host
+
+    return {
+      _id: p._id,
+      username: p.username,
+      isHost,
+      label: isHost ? `${p.username} (host)` : p.username,
+    };
+  });
+
+  return {
+    _id: room._id,
+    roomId: room._id, // explicit alias - frontend uses this to join
+    name: room.name,
+    host: {
+      _id: room.host._id,
+      username: room.host.username,
+    },
+    isPrivate: room.isPrivate,
+    maxParticipants: room.maxParticipants,
+    isActive: room.isActive,
+    participants, // formatted with isHosrt + label
+    createdAt: room.createdAt,
+  };
+};
+
+// HELPER FUNCTION
+
+//Re-queries the room from DB with host + participants populated
+// called after any change (create/join/save) so we always format fresh data, not stale in-memory ObjectIds
+
+const populatedRoom = async (roomId) => {
+  return Room.findById(roomId)
+    .populate("host", "username")
+    .populate("participants", "username");
+};
+
 // CREATE ROOM -> POST /rooms/create (protected)
 
 // The authentiated user becomes the host
 //If a paswword is provided -> isPrivate = true and the password is hashed by the RoomSchema.ore("save") hook, already defined in Room.js
-
 // The host is NOT added to participants yet — they join the room explicitly via joinRoom, which also creates the Session document.
 
 export const createRoom = async (req, res, next) => {
@@ -38,14 +88,20 @@ export const createRoom = async (req, res, next) => {
       maxParticipants,
     });
 
-    // Return room without the password field ( select: flse handles this automatically on create, but we do toObject() for clarity)
-    const safeRoom = room.toObject();
-    delete safeRoom.password; // Ensure password is not sent in the response
+    // Re-query with populate - Room.create() returns the raw document, host is still an ObjectId at this point
+    const populated = await populatedRoom(room._id);
+
+    // // Return room without the password field ( select: flse handles this automatically on create, but we do toObject() for clarity)
+    // const safeRoom = room.toObject();
+    // delete safeRoom.password; // Ensure password is not sent in the response
 
     return res.status(201).json({
       success: true,
       message: "Room is created successfully",
-      room: safeRoom,
+      room: formatRoom(populated),
+
+      // participants is [] here (host hasn't joined yet - that's intentional btw
+      // The host joins via POST /rooms/join/:roomId after creation)
     });
   } catch (error) {
     next(error);
@@ -58,11 +114,12 @@ export const createRoom = async (req, res, next) => {
 // 1. Finds a room ( with password field selected for verification )
 // 2. If room is private, verify the provided password
 // 3. Prevent duplicate joins ( user already in participation list cannot join again )
-// 4. Checks the participation cap
+// 4. Checks the participation capacity
 // 5. Adds the user to room.participants, mark room isActive = true
 // 6. Session logic :
 //    - If no active Session exists -> creates one (the created one is the host)
 //    - If an active Session exists -> adds this user as participant into it
+// 7. re-query with populate -> formatRoom -> respond
 
 export const joinRoom = async (req, res, next) => {
   try {
@@ -86,6 +143,8 @@ export const joinRoom = async (req, res, next) => {
         });
       }
     }
+
+    const userId = req.user._id;
 
     // Duplicate Join Prevention
     // here participants is an array of ObjectIds; .some() with .equals() does proper ObjectId comparison ( string == ObjectId works but .equals() is safer )
@@ -129,18 +188,15 @@ export const joinRoom = async (req, res, next) => {
       await session.save(); // Save the updated session document with the new participant
     }
 
+    // re-query with populate so formatRoom has username
+    // room.participants at this point is an array of raw ObjectIds (we just pushed userId)
+    // We must re-query to get the populated user Objects
+    const populated = await populatedRoom(room._id);
+
     return res.status(200).json({
       success: true,
       message: "Room joined successfully",
-      room: {
-        _id: room._id,
-        name: room.name,
-        host: room.host,
-        isPrivate: room.isPrivate,
-        participants: room.participants,
-        maxParticipants: room.maxParticipants,
-        isActive: room.isActive,
-      },
+      room: formatRoom(populated),
       sessionId: session._id,
     });
   } catch (error) {
@@ -174,9 +230,7 @@ export const leaveRoom = async (req, res, next) => {
 
     if (session) {
       const entry = session.participants.find((p) => p.user.equals(userId));
-      if (entry) {
-        entry.leftAt = new Date();
-      }
+      if (entry) entry.leftAt = new Date();
 
       if (isHost) {
         // endSession() sets endTime + computes duration, then saves the doc
@@ -260,7 +314,7 @@ export const listRooms = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       count: rooms.length,
-      rooms,
+      rooms: rooms.map(formatRoom), // consistent structure across all the endpoints
     });
   } catch (error) {
     next(error);
@@ -284,7 +338,7 @@ export const getRoomById = async (req, res, next) => {
         .json({ success: false, message: "Room not found" });
     }
 
-    return res.status(200).json({ success: true, room });
+    return res.status(200).json({ success: true, room: formatRoom(room) });
   } catch (error) {
     next(error);
   }
