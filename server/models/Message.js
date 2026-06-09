@@ -34,4 +34,4 @@ const MessageSchema = new Schema(
 MessageSchema.index({ room: 1, createdAt: -1 });
 
 export default mongoose.model("Message", MessageSchema);
-// → Collection name in MongoDB: 'messages'
+// Collection name in MongoDB: 'messages'

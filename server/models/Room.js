@@ -76,7 +76,7 @@ RoomSchema.methods.verifyPassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// current participant count (no extra DB call needed)
+// current participant count (no extra DB call needed), virtual field means it's not stored in the DB
 RoomSchema.virtual("participantCount").get(function () {
   return this.participants.length;
 });

@@ -96,7 +96,7 @@ const Rooms = () => {
       });
 
       const createdRoom = createResponse.data.room;
-      const joinResponse = await api.post(`/rooms/join/${createdRoom._id}`, {
+      const joinResponse = await api.post(`/rooms/join/${createdRoom.roomId}`, {
         password: createForm.password || undefined,
       });
 
@@ -128,7 +128,7 @@ const Rooms = () => {
     }
 
     try {
-      const response = await api.post(`/rooms/join/${room._id}`, {
+      const response = await api.post(`/rooms/join/${room.roomId}`, {
         password: room.isPrivate ? joinPassword[room._id] : undefined,
       });
 
@@ -213,8 +213,8 @@ const Rooms = () => {
               {activeRooms.map((room) => (
                 <div key={room._id} className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 text-lg font-semibold text-amber-900">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 text-lg font-semibold text-amber-900 mb-2">
                         <span>{room.name}</span>
                         {room.isPrivate && (
                           <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
@@ -222,10 +222,22 @@ const Rooms = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-amber-700">Hosted by {getHostName(room)}</p>
-                      <p className="text-sm text-amber-700">
+                      <p className="text-amber-700 mb-2">Hosted by {room.host?.username || getHostName(room)}</p>
+                      <p className="text-sm text-amber-700 mb-2">
                         Participants: {room.participants?.length || 0} / {room.maxParticipants}
                       </p>
+                      {room.participants && room.participants.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {room.participants.map((participant) => (
+                            <span
+                              key={participant._id}
+                              className="inline-block rounded-full bg-white px-3 py-1 text-xs font-medium text-amber-800 border border-amber-200"
+                            >
+                              {participant.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => handleLeave(room)}
@@ -251,9 +263,9 @@ const Rooms = () => {
               <div className="space-y-4">
                 {rooms.map((room) => (
                   <div key={room._id} className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="flex items-center gap-2 text-lg font-semibold text-amber-900">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 text-lg font-semibold text-amber-900 mb-2">
                           <span>{room.name}</span>
                           {room.isPrivate && (
                             <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
@@ -261,12 +273,24 @@ const Rooms = () => {
                             </span>
                           )}
                         </div>
-                        <p className="text-amber-700">Hosted by {room.host?.username || 'Unknown'}</p>
-                        <p className="text-sm text-amber-700">
+                        <p className="text-amber-700 mb-2">Hosted by {room.host?.username || 'Unknown'}</p>
+                        <p className="text-sm text-amber-700 mb-2">
                           Participants: {room.participants?.length || 0} / {room.maxParticipants}
                         </p>
+                        {room.participants && room.participants.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {room.participants.map((participant) => (
+                              <span
+                                key={participant._id}
+                                className="inline-block rounded-full bg-white px-3 py-1 text-xs font-medium text-amber-800 border border-amber-200"
+                              >
+                                {participant.label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:ml-4">
                         {isParticipant(room) ? (
                           <button
                             onClick={() => handleLeave(room)}
