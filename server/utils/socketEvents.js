@@ -15,7 +15,7 @@ export const SOCKET_EVENTS = {
 
   // Chat ( client -> server )
   CHAT_MESSAGE: "chat:message", // send a new message
-  CHAT_TYPING: "cgat:typing", // typing indicator on/off
+  CHAT_TYPING: "chat:typing", // typing indicator on/off
 
   // chat ( server -> client )
   CHAT_HISTORY: "chat: history", // initial history sent on room:join

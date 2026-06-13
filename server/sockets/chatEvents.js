@@ -96,4 +96,71 @@ export const registerChatEvents = (io, socket) => {
       });
     }
   });
+
+  // ------------- chat:typing --------- //
+  // lighweight event no DB write needed, just relay to others in the room
+  // client emmits { roomId, isTyping: true/false  }
+
+  socket.on(SOCKET_EVENTS.CHAT_TYPING, ({ roomId, isTyping }) => {
+    if (!roomId) return;
+
+    //socket.to() excludes the sender - no need to see the typing indicator
+    socket.to(roomId).emit(SOCKET_EVENTS.CHAT_TYPING, {
+      user: socket.user,
+      isTyping: !!isTyping, // convert the isTyping value to boolean
+    });
+  });
+
+  // ----------------- room:leave --------------//
+  // Explicit leave the room ( user clicked -> "leave room")
+  // saves the system message to the DB
+  // Client should also call the API DETELE /rooms/leave/:roomId to update the DB state
+
+  socket.on(SOCKET_EVENTS.ROOM_LEAVE, async ({ roomId }) => {
+    try {
+      if (!roomId) return;
+
+      socket.leave(roomId);
+
+      const sysMsg = await saveSystemMessage(
+        roomId,
+        socket.user._id,
+        `${socket.user.username} left the room`,
+      );
+
+      // Broadcast to all the remaining users in the room
+      io.to(roomId).emit(SOCKET_EVENTS.ROOM_USER_LEFT, {
+        user: socket.user,
+        message: sysMsg,
+      });
+
+      // Clear the room id from the socket
+      socket.currentRoom = null;
+    } catch (err) {
+      console.error("[room:leave]", err.message);
+    }
+  });
+
+  // --------disconnect -----------------//
+  //  fires on browser close or network error, maybw temporary so do not update the DB
+  // just notify the room so that UI can show the "User Disconnected"
+  // no db write needed: if the user reconnects quickly, they rejoin without a leave record
+
+  socket.on(SOCKET_EVENTS.DISCONNECT, () => {
+    if (socket.currentRoom) {
+      // no await - fire and forget on disconnect
+
+      io.to(socket.currentRoom).emit(SOCKET_EVENTS.ROOM_USER_LEFT, {
+        user: socket.user,
+
+        // no db message saved - disconnect is potentially temporary
+
+        message: {
+          text: `${socket.user.username} disconnected`,
+          type: "system",
+          createdAt: new Date(),
+        },
+      });
+    }
+  });
 };
