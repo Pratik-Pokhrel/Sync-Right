@@ -16,7 +16,7 @@ const assertParticipant = async (room, userId) => {
 };
 
 // This function saves a system message and returns it ( used for join/leave announcements )
-const saveSystsemMessage = async (roomId, senderId, text) => {
+const saveSystemMessage = async (roomId, senderId, text) => {
   return Message.create({
     room: roomId,
     sender: senderId,
@@ -45,7 +45,6 @@ export const registerChatEvents = (io, socket) => {
       }
 
       const room = await Room.findById(roomId);
-
       if (!room) {
         return socket.emit(SOCKET_EVENTS.ROOM_ERROR, {
           message: "Room not found",
@@ -53,7 +52,6 @@ export const registerChatEvents = (io, socket) => {
       }
 
       const allowed = await assertParticipant(room, socket.user._id);
-
       if (!allowed) {
         return socket.emit(SOCKET_EVENTS.ROOM_ERROR, {
           message:
@@ -61,38 +59,76 @@ export const registerChatEvents = (io, socket) => {
         });
       }
 
-      // Join the Socket.io room channel
-      socket.join(roomId); // join the room channel
-      socket.currentRoom = roomId; // save the room id to the socket object as a property(currentRoom) so we can use it later
+      socket.join(roomId);
+      socket.currentRoom = roomId;
 
-      // ----- Send the message history to this socket only   ---- //
-
-      const history = await Message.find({ room: roomID })
-        .populate("sender", "username") // populate the sender field with the username
+      const history = await Message.find({ room: roomId })
+        .populate("sender", "username")
         .sort({ createdAt: -1 })
         .limit(HISTORY_LIMIT)
-        .lean(); // lean() is used to get plain JS object
+        .lean();
 
       socket.emit(SOCKET_EVENTS.CHAT_HISTORY, {
-        message: history.reverse(), // return chronological history to the client
+        message: history.reverse(),
       });
 
-      // --- Save + Broadcast join system message --- //
-      const sysMsg = await saveSystsemMessage(
-        roomId,
-        socket.user._id,
-        `${socket.user.username} joined the room`,
-      );
+      // If a "left" announcement is pending from a near-instant rejoin
+      // (StrictMode double-effect), cancel it - this socket never really left.
+      if (socket.leaveTimer) {
+        clearTimeout(socket.leaveTimer);
+        socket.leaveTimer = null;
+      }
 
-      // io.to() is used to broadcast to all users in the room
-      io.to(roomId).emit(SOCKET_EVENTS.ROOM_USER_JOINED, {
-        user: socket.user,
-        message: sysMsg,
-      });
+      // Only announce "joined" if we haven't already announced it for this socket's current room.
+      if (!socket.hasAnnouncedJoin) {
+        const sysMsg = await saveSystemMessage(
+          roomId,
+          socket.user._id,
+          `${socket.user.username} joined the room`,
+        );
+
+        io.to(roomId).emit(SOCKET_EVENTS.ROOM_USER_JOINED, {
+          user: socket.user,
+          message: sysMsg,
+        });
+
+        socket.hasAnnouncedJoin = true;
+      }
     } catch (err) {
       console.error("[room:join]", err.message);
-      socket.emit(SOCKET_EVENTS.ROOM_ERRRR, {
+      socket.emit(SOCKET_EVENTS.ROOM_ERROR, {
         message: "Failed to join room channel",
+      });
+    }
+  });
+
+  socket.on(SOCKET_EVENTS.CHAT_MESSAGE, async ({ roomId, text }) => {
+    try {
+      if (!roomId || !text?.trim()) return;
+
+      // Don't trust the client - confirm this socket is actually in the room
+      if (!socket.rooms.has(roomId)) {
+        return socket.emit(SOCKET_EVENTS.ROOM_ERROR, {
+          message: "Join the room before sending messages",
+        });
+      }
+
+      const message = await Message.create({
+        room: roomId,
+        sender: socket.user._id,
+        text: text.trim(),
+        type: "text",
+      });
+
+      const populated = await Message.findById(message._id)
+        .populate("sender", "username")
+        .lean();
+
+      io.to(roomId).emit(SOCKET_EVENTS.CHAT_MESSAGE, { message: populated });
+    } catch (err) {
+      console.error("[chat:message]", err.message);
+      socket.emit(SOCKET_EVENTS.ROOM_ERROR, {
+        message: "Failed to send message",
       });
     }
   });
@@ -121,21 +157,28 @@ export const registerChatEvents = (io, socket) => {
       if (!roomId) return;
 
       socket.leave(roomId);
-
-      const sysMsg = await saveSystemMessage(
-        roomId,
-        socket.user._id,
-        `${socket.user.username} left the room`,
-      );
-
-      // Broadcast to all the remaining users in the room
-      io.to(roomId).emit(SOCKET_EVENTS.ROOM_USER_LEFT, {
-        user: socket.user,
-        message: sysMsg,
-      });
-
-      // Clear the room id from the socket
       socket.currentRoom = null;
+
+      if (!socket.hasAnnouncedJoin) return; // never announced, nothing to retract
+
+      // Delay the "left" announcement slightly. If the socket rejoins
+      // before this fires (StrictMode double-effect), ROOM_JOIN will
+      // cancel this timer and we skip the announcement entirely.
+      socket.leaveTimer = setTimeout(async () => {
+        const sysMsg = await saveSystemMessage(
+          roomId,
+          socket.user._id,
+          `${socket.user.username} left the room`,
+        );
+
+        io.to(roomId).emit(SOCKET_EVENTS.ROOM_USER_LEFT, {
+          user: socket.user,
+          message: sysMsg,
+        });
+
+        socket.hasAnnouncedJoin = false;
+        socket.leaveTimer = null;
+      }, 300);
     } catch (err) {
       console.error("[room:leave]", err.message);
     }

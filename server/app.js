@@ -10,6 +10,7 @@ import oauthRoutes from "./routes/oauth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import roomRoutes from "./routes/room.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import messageRoutes from "./routes/message.routes.js";
 
 const app = express();
 
@@ -18,7 +19,7 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: "http://localhost:5173", // The frontend's URL
+    origin: ENV.CLIENT_URL || "http://localhost:5173", // The frontend's URL
     credentials: true, // Allow cookies to be sent in cross-origin requests
   }),
 );
@@ -33,13 +34,12 @@ app.use(morgan("dev")); // Log HTTP requests in development mode
 //   app.use(morgan("combined")); // Use a more concise logging format in production
 // }
 
-// All the routes
+// --------------- All the routes go here ---------///
 app.use("/auth", authRoutes); // auth-related routes like /register, /login and so on
 app.use("/auth", oauthRoutes); // new -> /auth/google, /auth/google/callback
-
 app.use("/admin", adminRoutes); // admin-related routes like /admin/users, /admin/users/:id/role and so on
-
-app.use("/rooms", roomRoutes);
+app.use("/rooms", roomRoutes); // room related routes
+app.use("/messages", messageRoutes); // message related routes
 
 // Health check route - useful for monitoring and testing if the server is running
 app.get("/health", (req, res) => {
