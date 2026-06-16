@@ -1,10 +1,20 @@
+import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { connectSocket, disconnectSocket } from '../utils/socket';
 import { tokenStorage } from '../utils/tokenStorage';
 
 const Dashboard = () => {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const token = tokenStorage.getToken();
+    if (token) {
+      connectSocket(token);
+    }
+  }, []);
+
   const handleLogout = () => {
+    disconnectSocket();
     tokenStorage.removeToken();
     navigate('/login');
   };

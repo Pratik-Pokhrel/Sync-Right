@@ -4,6 +4,7 @@ import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
 import OauthCallback from '../pages/OauthCallback';
 import Rooms from '../pages/Rooms';
+import RoomChat from '../pages/RoomChat';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import AdminDashboard from '../pages/AdminDashboard';
 import AdminUsers from '../pages/AdminUsers';
@@ -16,6 +17,7 @@ const AllRoutes = () => {
       <Route path="/oauth/callback" element={<OauthCallback />} />
       <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
       <Route path="/rooms" element={<ProtectedRoute element={<Rooms />} />} />
+      <Route path="/rooms/:roomId/chat" element={<ProtectedRoute element={<RoomChat />} />} />
       <Route
         path="/admin"
         element={<ProtectedRoute element={<AdminDashboard />} allowedRoles={["admin"]} />}

@@ -212,7 +212,7 @@ const Rooms = () => {
             <div className="space-y-4">
               {activeRooms.map((room) => (
                 <div key={room._id} className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 text-lg font-semibold text-amber-900 mb-2">
                         <span>{room.name}</span>
@@ -239,12 +239,21 @@ const Rooms = () => {
                         </div>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleLeave(room)}
-                      className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
-                    >
-                      Leave Room
-                    </button>
+                    <div className="flex gap-2">
+                      <Link
+                        to={`/rooms/${room._id}/chat`}
+                        state={{ roomName: room.name }}
+                        className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700"
+                      >
+                        Open Chat
+                      </Link>
+                      <button
+                        onClick={() => handleLeave(room)}
+                        className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+                      >
+                        Leave Room
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
