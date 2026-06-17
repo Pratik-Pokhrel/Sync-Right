@@ -1,3 +1,5 @@
+// single source file for all Socket.io event names
+
 export const SOCKET_EVENTS = {
   // Native Socket.io
   CONNECTION: "connection", // Client connected to the server
@@ -19,4 +21,18 @@ export const SOCKET_EVENTS = {
 
   // chat ( server -> client )
   CHAT_HISTORY: "chat:history", // initial history sent on room:join
+
+  // ------------ WebRTC (client -> server) ----------- //
+  WEBRTC_JOIN: "webrtc:join", // join the call inside a room
+  WEBRTC_LEAVE: "webrtc:leave", // leave the call(explicit)
+  WEBRTC_OFFER: "webrtc:offer", // relay SDP offer to a specific peer
+  WEBRTC_ANSWER: "webrtc:answer", // relay SDP answer to specific peer
+  WEBRTC_ICE_CANDIDATE: "webrtc:ice-candidate", // relay ICE candidate to specific peer
+  // All these ABOVE events are reused but in opposite directions ( i.e server -> client )
+
+  // --------- WebRTC ( client -> server ) ---------- //
+  WEBRTC_EISTING_PEERS: "webrtc:existing-peers", // list of peers already in the call (sent to the joiner/participant)
+  WEBRTC_PEER_JOINED: "webrtc:peer-joined", // broadcast: a new peer entered the call
+  WEBRTC_PEER_LEFT: "webrtc:peer-left", // broadcast: a peer left the call
+  WEBRTC_ERROR: "webrtc:error", // error back to the offending socket only
 };

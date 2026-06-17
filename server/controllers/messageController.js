@@ -1,5 +1,4 @@
 import Message from "../models/Message.js";
-import Meesgae from "../models/Message.js";
 import Room from "../models/Room.js";
 
 // GET /messages/:roomId?page=1&limit=50
@@ -14,24 +13,22 @@ export const getRoomMessages = async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, parseInt(req.query.limit) || 50);
 
-    //Authorization
+    //Authorization //
     const room = await Room.findById(roomId);
     if (!room) {
       return res
         .status(404)
-        .json({ succes: false, message: "Room not found " }); // hard capacity = 100;
+        .json({ success: false, message: "Room not found " }); // hard capacity = 100;
     }
 
     const isHost = room.host.equals(req.user._id);
     const isParticipant = room.participants.some((p) => p.equals(req.user._id));
 
     if (!isHost && !isParticipant) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Access denied: Your are not in this room",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: You are not in this room",
+      });
     }
 
     // Pagination //
