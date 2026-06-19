@@ -31,7 +31,7 @@ export const SOCKET_EVENTS = {
   // All these ABOVE events are reused but in opposite directions ( i.e server -> client )
 
   // --------- WebRTC ( client -> server ) ---------- //
-  WEBRTC_EISTING_PEERS: "webrtc:existing-peers", // list of peers already in the call (sent to the joiner/participant)
+  WEBRTC_EXISTING_PEERS: "webrtc:existing-peers", // list of peers already in the call (sent to the joiner/participant)
   WEBRTC_PEER_JOINED: "webrtc:peer-joined", // broadcast: a new peer entered the call
   WEBRTC_PEER_LEFT: "webrtc:peer-left", // broadcast: a peer left the call
   WEBRTC_ERROR: "webrtc:error", // error back to the offending socket only
