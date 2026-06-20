@@ -11,6 +11,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import roomRoutes from "./routes/room.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import messageRoutes from "./routes/message.routes.js";
+import callRoutes from "./routes/call.routes.js";
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use("/auth", oauthRoutes); // new -> /auth/google, /auth/google/callback
 app.use("/admin", adminRoutes); // admin-related routes like /admin/users, /admin/users/:id/role and so on
 app.use("/rooms", roomRoutes); // room related routes
 app.use("/messages", messageRoutes); // message related routes
+app.use("/call", callRoutes);
 
 // Health check route - useful for monitoring and testing if the server is running
 app.get("/health", (req, res) => {

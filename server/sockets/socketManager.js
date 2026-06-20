@@ -3,6 +3,8 @@ import { ENV } from "../config/env.js";
 import { socketAuth } from "../sockets/socketAuth.js";
 import { registerChatEvents } from "../sockets/chatEvents.js";
 import { SOCKET_EVENTS } from "../utils/socketEvents.js";
+import { registerWebRTCEvents } from "../sockets/webrtcSignaling.js";
+import { RegisterWhiteboardEvents } from "../sockets/whiteboardEvent.js";
 
 // initializes Socket.io on the provided HTTP server
 // returns the "io" instance in case other parts of the app need it ( like emitting from REST controllers )
@@ -31,6 +33,12 @@ export const initSocket = (httpServer) => {
 
     // Register all chat related events for this socket
     registerChatEvents(io, socket);
+
+    // Register all WebRTC related events for this socket
+    registerWebRTCEvents(io, socket);
+
+    // Register all Whiteboard related events for this socket
+    RegisterWhiteboardEvents(io, socket);
 
     socket.on(SOCKET_EVENTS.DISCONNECT, (reason) => {
       console.log(

@@ -1,4 +1,4 @@
-// single source file for all Socket.io event names
+// single source file for all Socket.io and related event names
 
 export const SOCKET_EVENTS = {
   // Native Socket.io
@@ -35,4 +35,12 @@ export const SOCKET_EVENTS = {
   WEBRTC_PEER_JOINED: "webrtc:peer-joined", // broadcast: a new peer entered the call
   WEBRTC_PEER_LEFT: "webrtc:peer-left", // broadcast: a peer left the call
   WEBRTC_ERROR: "webrtc:error", // error back to the offending socket only
+
+  // ------ Whiteboard vars ----------//
+  WHITEBOARD_JOIN: "whiteboard:join",
+  WHITEBOARD_SYNC: "whiteboard:sync",
+  WHITEBOARD_STROKE: "whiteboard:stroke",
+  WHITEBOARD_DRAWING: "whiteboard:drawing",
+  WHITEBOARD_UNDO: "whiteboard:undo",
+  WHITEBOARD_CLEAR: "whiteboard:clear",
 };

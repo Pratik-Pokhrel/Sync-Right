@@ -7,7 +7,7 @@ const callRooms = new Map(); // callRooms is a Map object, which is a data struc
 
 // Hard cap for full mesh : N x (N-1) / 2 peer connections per room
 // At 8 peers -> 28 connections, 7 per client i.e. safe browser limit
-const MA_CALL_PARTICIPANTS = 8;
+const MAX_CALL_PARTICIPANTS = 8;
 
 // -------------- Helper functions ----------------------//
 
@@ -144,6 +144,21 @@ export const registerWebRTCEvents = (io, socket) => {
       );
     }
 
+    io.to(targetSocketId).emit(SOCKET_EVENTS.WEBRTC_OFFER, {
+      sdp,
+      fromSocketId: socket.id,
+      from: { _id: socket.user._id, username: socket.user.username },
+    });
+  });
+
+  // webrtc:answer -> direction : peer -> joiner
+  // payload -> { targetSocketId, sdp, roomId } : target receives the offer, creates an answer, here relays it back to the caller
+  socket.on(SOCKET_EVENTS.WEBRTC_ANSWER, ({ targetSocketId, sdp, roomId }) => {
+    if (!targetSocketId || !sdp || !roomId)
+      return emitError(socket, "targetSocketId, sdp, and roomId are required");
+    if (!assertBothInCall(roomId, socket.id, targetSocketId))
+      return emitError(socket, "Both peers must be in the same active call");
+
     io.to(targetSocketId).emit(SOCKET_EVENTS.WEBRTC_ANSWER, {
       sdp,
       fromSocketId: socket.id,
@@ -151,7 +166,7 @@ export const registerWebRTCEvents = (io, socket) => {
     });
   });
 
-  //webrtc:candidate -> pure-relay, fires 10-200+ times per peer-pair
+  //webrtc:ice-candidate -> pure-relay, fires 10-200+ times per peer-pair
   // payload : { targetSocketId, canidate, roomId }
   socket.on(
     SOCKET_EVENTS.WEBRTC_ICE_CANDIDATE,
