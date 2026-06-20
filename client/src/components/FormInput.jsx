@@ -1,13 +1,13 @@
 import { useState } from 'react';
 
-const FormInput = ({ label, type, id, name, value, onChange, placeholder, required = false, error = null }) => {
+const FormInput = ({ label, type, id, name, value, onChange, placeholder, required = false, error = null, className = '' }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPasswordField = type === 'password';
   const inputType = isPasswordField ? (showPassword ? 'text' : 'password') : type;
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-amber-800 mb-2">
+      <label htmlFor={id} className="block text-sm font-medium text-slate-200 mb-2">
         {label}
       </label>
       <div className="relative">
@@ -18,11 +18,11 @@ const FormInput = ({ label, type, id, name, value, onChange, placeholder, requir
           value={value}
           onChange={onChange}
           required={required}
-          className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-amber-50/50 transition-colors ${
+          className={`w-full px-4 py-3 rounded-2xl border text-white bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:border-transparent ${
             error
-              ? 'border-red-300 focus:ring-red-500'
-              : 'border-amber-300 focus:ring-amber-500'
-          } ${isPasswordField ? 'pr-12' : ''}`}
+              ? 'border-rose-400/70 bg-rose-500/10 focus:ring-rose-400'
+              : 'border-white/20 focus:ring-cyan-400'
+          } ${isPasswordField ? 'pr-12' : ''} ${className}`}
           placeholder={placeholder}
         />
         {isPasswordField && (
@@ -30,7 +30,7 @@ const FormInput = ({ label, type, id, name, value, onChange, placeholder, requir
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
-            className="absolute inset-y-0 right-3 flex items-center text-amber-600 hover:text-amber-800 focus:outline-none"
+            className="absolute inset-y-0 right-3 flex items-center text-slate-300 hover:text-white focus:outline-none"
           >
             {showPassword ? (
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5">
@@ -51,7 +51,7 @@ const FormInput = ({ label, type, id, name, value, onChange, placeholder, requir
         )}
       </div>
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p className="mt-1 text-sm text-rose-300">{error}</p>
       )}
     </div>
   );
