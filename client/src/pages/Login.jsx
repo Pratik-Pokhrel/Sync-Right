@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { tokenStorage } from '../utils/tokenStorage';
 import FormInput from '../components/FormInput';
+import AuthPageLayout from '../components/AuthPageLayout';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -42,20 +43,19 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-amber-50 to-orange-100 flex items-center justify-center p-4">
-      <div className="bg-white/80 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-serif text-amber-900 mb-2">Welcome Back</h1>
-          <p className="text-amber-700">Sign in to your account</p>
-        </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+    <AuthPageLayout subtitle="Sign in to your account">
+      <div className="relative overflow-hidden rounded-[28px] border border-white/20 bg-white/10 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-3xl" >
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.06)_30%,rgba(255,255,255,0.03)_60%,transparent_100%)]" />
+        <div className="absolute inset-x-6 top-6 h-24 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative z-10">
+          {error && (
+            <div className="mb-6 rounded-3xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <FormInput
             label="Email Address"
             type="email"
@@ -65,7 +65,7 @@ const Login = () => {
             onChange={handleChange}
             placeholder="Enter your email"
             required
-          />
+            />
 
           <FormInput
             label="Password"
@@ -81,17 +81,17 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-medium py-3 px-4 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-          >
+            className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-base font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-cyan-500/60"
+            >
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="mt-4">
+        <div className="mt-6 space-y-4">
           <a
             href="http://localhost:8000/auth/google"
-            className="flex items-center justify-center w-full gap-3 mt-3 border border-amber-200 hover:border-amber-300 bg-white text-amber-900 font-medium py-3 px-4 rounded-md transition duration-200"
-          >
+            className="flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-medium text-white transition hover:border-white/20 hover:bg-white/15"
+            >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 533.5 544.3" className="h-5 w-5">
               <path fill="#4285f4" d="M533.5 278.4c0-18.4-1.5-36.1-4.3-53.4H272v101h146.9c-6.4 34.4-25.6 63.5-54.6 83v68h88.3c51.8-47.8 81.9-118 81.9-198.6z"/>
               <path fill="#34a853" d="M272 544.3c73.4 0 135-24.3 180-65.7l-88.3-68c-24.6 16.5-56 26.3-91.7 26.3-70.6 0-130.4-47.7-151.9-111.9H30.6v70.4C76 499.8 167.4 544.3 272 544.3z"/>
@@ -100,19 +100,21 @@ const Login = () => {
             </svg>
             Continue with Google
           </a>
-        </div>
 
-        <div className="mt-6 text-center">
-          <p className="text-amber-700">
+          <p className="text-center text-sm text-slate-400">
             Don't have an account?{' '}
-            <Link to="/register" className="text-amber-600 hover:text-amber-800 font-medium underline">
+            <Link to="/register" className="font-semibold text-white hover:text-cyan-200">
               Sign up here
             </Link>
           </p>
         </div>
       </div>
-    </div>
-  );
-};
+      </div>
+    </AuthPageLayout>
+
+
+    );
+  };
+
 
 export default Login;

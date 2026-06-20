@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import FormInput from '../components/FormInput';
+import AuthPageLayout from '../components/AuthPageLayout';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -63,26 +64,24 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-amber-50 to-orange-100 flex items-center justify-center p-4">
-      <div className="bg-white/80 backdrop-blur-sm border border-amber-200 rounded-lg shadow-lg p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-serif text-amber-900 mb-2">Join Us</h1>
-          <p className="text-amber-700">Create your account</p>
-        </div>
-
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-            Registration successful! Redirecting to login...
-          </div>
-        )}
+    <AuthPageLayout title="Create your account" subtitle="Start collaborating with secure access">
+      <div className="relative overflow-hidden rounded-[28px] border border-white/20 bg-white/10 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-3xl">
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.06)_30%,rgba(255,255,255,0.03)_60%,transparent_100%)]" />
+        <div className="absolute inset-x-6 top-6 h-24 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative z-10">
+          {success && (
+            <div className="mb-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+              Registration successful! Redirecting to login...
+            </div>
+          )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="mb-6 rounded-3xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6" disabled={success}>
+        <form onSubmit={handleSubmit} className="space-y-5" disabled={success}>
           <FormInput
             label="Username"
             type="text"
@@ -132,22 +131,21 @@ const Register = () => {
           <button
             type="submit"
             disabled={loading || success}
-            className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-medium py-3 px-4 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-base font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-cyan-500/60"
           >
             {loading ? 'Creating Account...' : success ? 'Account Created!' : 'Create Account'}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-amber-700">
-            Already have an account?{' '}
-            <Link to="/login" className="text-amber-600 hover:text-amber-800 font-medium underline">
-              Sign in here
-            </Link>
-          </p>
-        </div>
+        <p className="mt-6 text-center text-sm text-slate-400">
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-white hover:text-cyan-200">
+            Sign in here
+          </Link>
+        </p>
       </div>
-    </div>
+      </div>
+    </AuthPageLayout>
   );
 };
 
