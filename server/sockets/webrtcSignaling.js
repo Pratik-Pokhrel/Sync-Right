@@ -4,6 +4,7 @@ import { SOCKET_EVENTS } from "../utils/socketEvents.js";
 // In-memory call state -> Why in-memory? : call state remains for a short period, ICE fires 100+ times per pair, so to store each call state in DB would cost too much
 
 const callRooms = new Map(); // callRooms is a Map object, which is a data structure that stores key-value pairs, similar to an object, but it is more efficient and faster than an object for lookup operations. Lookup time : O(1)
+// at this stage, this callRooms is the empty object because this 'new Map()' approach is for in-memory data store (i.e. dyanamic data store) so at first, it is empty
 
 // Hard cap for full mesh : N x (N-1) / 2 peer connections per room
 // At 8 peers -> 28 connections, 7 per client i.e. safe browser limit
