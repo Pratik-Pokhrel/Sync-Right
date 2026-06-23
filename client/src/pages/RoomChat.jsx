@@ -33,23 +33,39 @@ const RoomChat = () => {
 
   if (!socketReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-amber-50 to-orange-100">
-        <p className="text-amber-700">Initializing connection...</p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+        <div className="relative">
+          <div className="absolute inset-0 bg-cyan-500/15 blur-3xl" />
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+            <p className="text-slate-300">Initializing connection...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen flex-col bg-linear-to-br from-amber-50 to-orange-100">
-      <div className="flex items-center justify-between border-b border-amber-200 bg-white/80 px-6 py-3 backdrop-blur-sm">
+    <div className="flex h-screen flex-col bg-slate-950 relative overflow-hidden">
+      {/* Background gradients */}
+      <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-slate-900 to-slate-950" />
+      <div className="absolute -left-16 top-10 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl" />
+      <div className="absolute -right-32 top-[25%] h-80 w-80 rounded-full bg-violet-500/15 blur-3xl" />
+
+      {/* Header */}
+      <div className="relative z-10 flex items-center justify-between border-b border-white/20 bg-white/5 backdrop-blur-md px-6 py-3">
         <Link
           to="/rooms"
-          className="rounded-md border border-amber-300 px-3 py-1.5 text-sm text-amber-800 transition hover:bg-amber-50"
+          className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/20"
         >
-          &larr; Back to Rooms
+          ← Back to Rooms
         </Link>
+        <h1 className="text-lg font-semibold text-white">{roomName || "Chat"}</h1>
+        <div className="w-32" />
       </div>
-      <div className="flex-1 p-4">
+
+      {/* Chat area */}
+      <div className="relative z-10 flex-1 p-4 overflow-hidden">
         <div className="mx-auto h-full max-w-4xl">
           <ChatPanel
             messages={messages}
