@@ -1,4 +1,4 @@
-// Must mirror server/utils/socketEvents.js
+// Must br the mirror of server/utils/socketEvents.js
 // payload is silently dropped on the client.
 export const SOCKET_EVENTS = {
   // Native Socket.io

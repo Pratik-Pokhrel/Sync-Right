@@ -1,11 +1,11 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const SOCKET_URL = import.meta.env.SERVER_API_URL || "http://localhost:8000";
 
 let socket = null;
 
 // Call connect(token) after login, disconnect() on logout.
-// Returns the same socket if already connected — safe to call multiple times.
+// Returns the same socket if already connected, safe to call multiple times.
 
 export const connectSocket = (accessToken) => {
   if (socket?.connected) return socket;
@@ -28,5 +28,5 @@ export const disconnectSocket = () => {
   }
 };
 
-// Raw access — only use inside hooks/components after connectSocket() was called
+// Raw access : only use inside hooks/components after connectSocket() was called
 export const getSocket = () => socket;

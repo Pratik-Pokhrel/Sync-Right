@@ -44,9 +44,6 @@ export const disconnectSocket = () => {
   }
 };
 
-/**
- * Return the live socket instance. Returns null if connectSocket has not
- * been called yet. Only call this from inside components/hooks that have
- * already ensured the connection exists.
- */
+// Return the live socket instance. Returns null if connectSocket has not been called yet. Only call this from inside components/hooks that have already ensured the connection exists.
+
 export const getSocket = () => socket;

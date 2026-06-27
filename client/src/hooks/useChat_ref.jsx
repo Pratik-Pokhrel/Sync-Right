@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getSocket } from "../utils/socket";
 
-// SOCKET_EVENTS must mirror server/utils/socketEvents.js
+// EVENTS must be the mirror of server/utils/socketEvents.js
 const EVENTS = {
   ROOM_JOIN:       "room:join",
   ROOM_LEAVE:      "room:leave",
@@ -15,15 +15,14 @@ const EVENTS = {
 
 const TYPING_DEBOUNCE_MS = 1500; // stop-typing fires after this much inactivity
 
-/**
- * useChat(roomId)
- *
- * Usage:
- *   const { messages, typingUsers, sendMessage, onTyping, error, connected } = useChat(roomId);
- *
- * Prerequisites:
- *   - connectSocket(accessToken) must have been called before this hook mounts
- *   - User must have called POST /rooms/join/:roomId (REST) before this hook mounts
+/*
+ useChat(roomId)
+
+ Usage:   const { messages, typingUsers, sendMessage, onTyping, error, connected } = useChat(roomId);
+
+  Prerequisites:
+     - connectSocket(accessToken) must have been called before this hook mounts
+     - User must have called POST /rooms/join/:roomId (REST) before this hook mounts
  */
 const useChat = (roomId) => {
   const [messages,    setMessages]    = useState([]);
@@ -31,20 +30,20 @@ const useChat = (roomId) => {
   const [error,       setError]       = useState(null);
   const [connected,   setConnected]   = useState(false);
 
-  // Ref to hold the typing debounce timer — doesn't need to trigger re-renders
+  // Ref to hold the typing debounce timer : doesn't need to trigger re-renders
   const typingTimer = useRef(null);
   const isTyping    = useRef(false);
 
   const socket = getSocket();
 
-  // ── Join socket room on mount, leave on unmount ──
+  //  Join socket room on mount, leave on unmount //
   useEffect(() => {
     if (!socket || !roomId) return;
 
     socket.emit(EVENTS.ROOM_JOIN, { roomId });
     setConnected(true);
 
-    // ── Listeners ──
+    // Listeners//
 
     const onHistory = ({ messages }) => {
       setMessages(messages);
@@ -106,7 +105,7 @@ const useChat = (roomId) => {
     };
   }, [socket, roomId]);
 
-  // ── sendMessage ──────────────────────────────────────────────────────────
+  // --------------sendMessage -----------//
   const sendMessage = useCallback(
     (text) => {
       if (!socket || !text?.trim()) return;
@@ -122,7 +121,7 @@ const useChat = (roomId) => {
     [socket, roomId],
   );
 
-  // ── onTyping — call this from the input's onChange ───────────────────────
+  // onTyping -> call this from the input's onChange
   // Emits typing:true immediately on first keystroke, then typing:false after
   // TYPING_DEBOUNCE_MS of inactivity. Debounced to avoid emitting on every key.
   const onTyping = useCallback(() => {
@@ -142,7 +141,7 @@ const useChat = (roomId) => {
 
   return {
     messages,
-    typingUsers,    // { [userId]: username } — render as "Alice, Bob are typing..."
+    typingUsers,    // { [userId]: username } -. render as "Alice, Bob are typing..."
     sendMessage,
     onTyping,       // attach to <input onChange={onTyping} />
     error,
