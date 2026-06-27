@@ -102,6 +102,8 @@ export const registerChatEvents = (io, socket) => {
     }
   });
 
+  // ----------- chat:message -----------------//
+
   socket.on(SOCKET_EVENTS.CHAT_MESSAGE, async ({ roomId, text }) => {
     try {
       if (!roomId || !text?.trim()) return;

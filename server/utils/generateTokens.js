@@ -20,4 +20,4 @@ export const generateRefreshToken = (user) => {
   );
 };
 
-// what this file does is generate access and refresh tokens for a user. The access token contains the user's ID and role, and is signed with a secret key. The refresh token only contains the user's ID, and is also signed with a different secret key. Both tokens have an expiration time defined in the environment variables.
+// what this file does is, it generate access and refresh tokens for a user. The access token contains the user's ID and role, and is signed with a secret key. The refresh token only contains the user's ID, and is also signed with a different secret key. Both tokens have an expiration time defined in the environment variables.
