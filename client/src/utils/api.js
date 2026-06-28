@@ -3,7 +3,7 @@ import { tokenStorage } from "./tokenStorage";
 
 // Create axios instance with base URL pointing to the backend server
 const api = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: "http://192.168.1.74:8000",
   withCredentials: true, // Enable sending cookies with requests for refresh token
 });
 
@@ -31,7 +31,7 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          "http://localhost:8000/refresh",
+          "http://192.168.1.74:8000/refresh",
           {},
           { withCredentials: true },
         );
