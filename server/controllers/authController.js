@@ -10,8 +10,8 @@ import jwt from "jsonwebtoken";
 // cookie options for the refresh token
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: ENV.NODE_ENV === "production", // only send cookie over HTTPS in production
-  sameSite: "Strict",
+  secure: false, // ENV.NODE_ENV === "production", // only send cookie over HTTPS in production
+  sameSite: "lax",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
 };
 

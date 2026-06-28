@@ -8,18 +8,29 @@ const boardState = new Map();
 
 // ----------- Helper Functionsv ------------//
 const getBoard = (roomId) => {
-  if (!boardsState.has(roomId)) {
-    boardState.set(roomId, { strokes: [], userStrokeIds: new Map() });
+  if (!boardState.has(roomId)) {
+    boardState.set(roomId, {
+      strokes: [],
+      userStrokeIds: new Map(),
+      hostId: null,
+    });
   }
   return boardState.get(roomId);
 };
 
+const isHostUser = (roomId, userId) => {
+  const board = boardState.get(roomId);
+  return !!board?.hostId && board.hostId === userId.toString();
+};
+
 const isRoomMember = (room, userId) => {
-  room.host.equals(userId) || room.participants.some((p) => p.equals(userId));
+  return (
+    room.host.equals(userId) || room.participants.some((p) => p.equals(userId))
+  );
 };
 
 const persist = (roomId, strokes) => {
-  Room.findByIdAndUpdate(roomId, { boardSnapShot: strokes }).catch((err) =>
+  Room.findByIdAndUpdate(roomId, { boardSnapshot: strokes }).catch((err) =>
     console.error("[whiteboard] persist error: ", err.message),
   );
 };
@@ -35,10 +46,11 @@ export const RegisterWhiteboardEvents = (io, socket) => {
       if (!room || !isRoomMember(room, socket.user._id)) return;
 
       const board = getBoard(roomId);
+      board.hostId = room.host.toString();
 
       // Cold start / Server restart -> hydrate from DB
-      if (board.strokes.length === 0 && room.board.snapshot?.length > 0) {
-        board.strokes = [...room.boardsnapshot];
+      if (board.strokes.length === 0 && room.boardSnapshot?.length > 0) {
+        board.strokes = [...room.boardSnapshot];
         board.strokes.forEach((s) => {
           if (!board.userStrokeIds.has(s.userId)) {
             board.userStrokeIds.set(s.userId, []);
@@ -59,6 +71,7 @@ export const RegisterWhiteboardEvents = (io, socket) => {
     ({ roomId, points, tool, color, width }) => {
       if (!roomId || !points) return;
       if (!socket.rooms.has(roomId)) return;
+      if (!isHostUser(roomId, socket.user._id)) return;
 
       socket.to(roomId).emit(SOCKET_EVENTS.WHITEBOARD_DRAWING, {
         userId: socket.user._id.toString(),
@@ -76,6 +89,7 @@ export const RegisterWhiteboardEvents = (io, socket) => {
     try {
       if (!roomId || !stroke?.points?.length) return;
       if (!socket.rooms.has(roomId)) return;
+      if (!isHostUser(roomId, socket.user._id)) return;
 
       const enriched = {
         ...stroke,
@@ -114,46 +128,49 @@ export const RegisterWhiteboardEvents = (io, socket) => {
     } catch (err) {
       console.error("[whiteboard:stroke]", err.message);
     }
+  });
 
-    // whiteboard: undo -> remove caller's last stroke, broadcast full updated list
-    socket.on(SOCKET_EVENTS.WHITEBOARD_UNDO, async ({ roomId }) => {
-      try {
-        if (!roomId || !socket.rooms.has(roomId)) return;
+  // whiteboard: undo -> remove caller's last stroke, broadcast full updated list
+  socket.on(SOCKET_EVENTS.WHITEBOARD_UNDO, async ({ roomId }) => {
+    try {
+      if (!roomId || !socket.rooms.has(roomId)) return;
+      if (!isHostUser(roomId, socket.user._id)) return;
 
-        const board = getBoard(roomId);
-        const uid = socket.user._id.toString();
-        const userIds = board.userStrokeIds.get(uid);
-        if (!userIds?.length) return;
+      const board = getBoard(roomId);
+      const uid = socket.user._id.toString();
 
-        const lastId = userIds.pop();
-        board.strokes = board.strokes.filter((s) => s.id !== lastId);
+      const userIds = board.userStrokeIds.get(uid);
+      if (!userIds?.length) return;
 
-        // Full sync so all clients redraw cleanly
-        io.to(roomId).emit(SOCKET_EVENTS.WHITEBOARD_SYNC, {
-          strokes: board.strokes,
-        });
-        persist(roomId, board.strokes);
-      } catch (err) {
-        console.error("[whiteboard:undo]", err.message);
-      }
-    });
+      const lastId = userIds.pop();
+      board.strokes = board.strokes.filter((s) => s.id !== lastId);
 
-    // whiteboard:clear -> wipe everything
-    socket.on(SOCKET_EVENTS.WHITEBOARD_CLEAR, async ({ roomId }) => {
-      try {
-        if (!roomId || !socket.rooms.has(roomId)) return;
+      // Full sync so all clients redraw cleanly
+      io.to(roomId).emit(SOCKET_EVENTS.WHITEBOARD_SYNC, {
+        strokes: board.strokes,
+      });
+      persist(roomId, board.strokes);
+    } catch (err) {
+      console.error("[whiteboard:undo]", err.message);
+    }
+  });
 
-        const board = getBoard(roomId);
-        board.strokes = [];
-        board.userStrokeIds.clear();
+  // whiteboard:clear -> wipe everything
+  socket.on(SOCKET_EVENTS.WHITEBOARD_CLEAR, async ({ roomId }) => {
+    try {
+      if (!roomId || !socket.rooms.has(roomId)) return;
+      if (!isHostUser(roomId, socket.user._id)) return;
 
-        io.to(roomId).emit(SOCKET_EVENTS.WHITEBOARD_CLEAR, {
-          clearedBy: { _id: socket.user._id, username: socket.user.username },
-        });
-        persist(roomId, []);
-      } catch (err) {
-        console.error("[whiteboard:clear]", err.message);
-      }
-    });
+      const board = getBoard(roomId);
+      board.strokes = [];
+      board.userStrokeIds.clear();
+
+      io.to(roomId).emit(SOCKET_EVENTS.WHITEBOARD_CLEAR, {
+        clearedBy: { _id: socket.user._id, username: socket.user.username },
+      });
+      persist(roomId, []);
+    } catch (err) {
+      console.error("[whiteboard:clear]", err.message);
+    }
   });
 };

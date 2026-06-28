@@ -20,7 +20,7 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: ENV.CLIENT_URL || "http://localhost:5173", // The frontend's URL
+    origin: ["http://localhost:5173", "http://192.168.1.74:5173"], // The frontend's URL
     credentials: true, // Allow cookies to be sent in cross-origin requests
   }),
 );
