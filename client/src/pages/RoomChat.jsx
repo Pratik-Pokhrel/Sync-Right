@@ -4,20 +4,35 @@ import { connectSocket } from "../utils/socket";
 import { tokenStorage } from "../utils/tokenStorage";
 import useChat from "../hooks/useChat";
 import ChatPanel from "../components/chat/ChatPanel";
+import WhiteboardPanel from "../components/whiteboard/WhiteboardPanel";
+import api  from "../utils/api";
+
+const TABS = ["Chat", "Whiteboard"];
 
 const RoomChat = () => {
   const { roomId } = useParams();
   const location = useLocation();
   const roomName = location.state?.roomName || "Chat";
   const [socketReady, setSocketReady] = useState(false);
+  const [activeTab, setActiveTab] = useState("Chat");
+  const [room, setRoom] = useState(null); // CHANGE 1: holds room doc so we can derive isHost
 
   useEffect(() => {
-    const token = tokenStorage.getToken();
-    if (token) {
-      connectSocket(token);
-      setSocketReady(true);
-    }
+      const token = tokenStorage.getToken();
+      if (token) {
+        connectSocket(token);
+        setSocketReady(true);
+      }
   }, []);
+
+  // fetch room on mount -> gives us room.host._id to compare against current user
+  useEffect(() => {
+      api.get(`/rooms/${roomId}`)
+        .then((res) => setRoom(res.data.room))
+        .catch((err) => console.error("[RoomChat] failed to fetch room:", err));
+  }, [roomId]);
+
+  const isHost = tokenStorage.getUser()?.id === room?.host?._id;
 
   const {
     messages,
@@ -61,24 +76,42 @@ const RoomChat = () => {
           ← Back to Rooms
         </Link>
         <h1 className="text-lg font-semibold text-white">{roomName || "Chat"}</h1>
-        <div className="w-32" />
+        <div className="flex rounded-xl border border-white/20 bg-white/10 p-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                activeTab === tab
+                  ? "bg-cyan-500 text-white shadow-sm"
+                  : "text-slate-200 hover:bg-white/15"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Chat area */}
-      <div className="relative z-10 flex-1 p-4 overflow-hidden">
-        <div className="mx-auto h-full max-w-4xl">
-          <ChatPanel
-            messages={messages}
-            typingUsers={typingUsers}
-            sendMessage={sendMessage}
-            onTyping={onTyping}
-            loadOlder={loadOlder}
-            hasMore={hasMore}
-            loadingMore={loadingMore}
-            error={error}
-            connected={connected}
-            roomName={roomName}
-          />
+      {/* Content area */}
+      <div className="relative z-10 flex-1 overflow-hidden p-4">
+        <div className="mx-auto h-full max-w-5xl">
+          {activeTab === "Chat" ? (
+            <ChatPanel
+              messages={messages}
+              typingUsers={typingUsers}
+              sendMessage={sendMessage}
+              onTyping={onTyping}
+              loadOlder={loadOlder}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              error={error}
+              connected={connected}
+              roomName={roomName}
+            />
+          ) : (
+            <WhiteboardPanel roomId={roomId} isHost={isHost}/>
+          )}
         </div>
       </div>
     </div>
