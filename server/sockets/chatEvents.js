@@ -16,14 +16,14 @@ const assertParticipant = async (room, userId) => {
 };
 
 // This function saves a system message and returns it ( used for join/leave announcements )
-const saveSystemMessage = async (roomId, senderId, text) => {
-  return Message.create({
-    room: roomId,
-    sender: senderId,
-    text,
-    type: "system",
-  });
-};
+// const saveSystemMessage = async (roomId, senderId, text) => {
+//   return Message.create({
+//     room: roomId,
+//     sender: senderId,
+//     text,
+//     type: "system",
+//   });
+// };
 
 // -------------- Register Chat Events -------------//
 
@@ -74,26 +74,26 @@ export const registerChatEvents = (io, socket) => {
 
       // If a "left" announcement is pending from a near-instant rejoin
       // (StrictMode double-effect), cancel it - this socket never really left.
-      if (socket.leaveTimer) {
-        clearTimeout(socket.leaveTimer);
-        socket.leaveTimer = null;
-      }
+      // if (socket.leaveTimer) {
+      //   clearTimeout(socket.leaveTimer);
+      //   socket.leaveTimer = null;
+      // }
 
-      // Only announce "joined" if we haven't already announced it for this socket's current room.
-      if (!socket.hasAnnouncedJoin) {
-        const sysMsg = await saveSystemMessage(
-          roomId,
-          socket.user._id,
-          `${socket.user.username} joined the room`,
-        );
+      // // Only announce "joined" if we haven't already announced it for this socket's current room.
+      // if (!socket.hasAnnouncedJoin) {
+      //   const sysMsg = await saveSystemMessage(
+      //     roomId,
+      //     socket.user._id,
+      //     `${socket.user.username} joined the room`,
+      //   );
 
-        io.to(roomId).emit(SOCKET_EVENTS.ROOM_USER_JOINED, {
-          user: socket.user,
-          message: sysMsg,
-        });
+      //   io.to(roomId).emit(SOCKET_EVENTS.ROOM_USER_JOINED, {
+      //     user: socket.user,
+      //     message: sysMsg,
+      //   });
 
-        socket.hasAnnouncedJoin = true;
-      }
+      //   socket.hasAnnouncedJoin = true;
+      // }
     } catch (err) {
       console.error("[room:join]", err.message);
       socket.emit(SOCKET_EVENTS.ROOM_ERROR, {
@@ -161,26 +161,26 @@ export const registerChatEvents = (io, socket) => {
       socket.leave(roomId);
       socket.currentRoom = null;
 
-      if (!socket.hasAnnouncedJoin) return; // never announced, nothing to retract
+      // if (!socket.hasAnnouncedJoin) return; // never announced, nothing to retract
 
-      // Delay the "left" announcement slightly. If the socket rejoins
-      // before this fires (StrictMode double-effect), ROOM_JOIN will
-      // cancel this timer and we skip the announcement entirely.
-      socket.leaveTimer = setTimeout(async () => {
-        const sysMsg = await saveSystemMessage(
-          roomId,
-          socket.user._id,
-          `${socket.user.username} left the room`,
-        );
+      // // Delay the "left" announcement slightly. If the socket rejoins
+      // // before this fires (StrictMode double-effect), ROOM_JOIN will
+      // // cancel this timer and we skip the announcement entirely.
+      // socket.leaveTimer = setTimeout(async () => {
+      //   const sysMsg = await saveSystemMessage(
+      //     roomId,
+      //     socket.user._id,
+      //     `${socket.user.username} left the room`,
+      //   );
 
-        io.to(roomId).emit(SOCKET_EVENTS.ROOM_USER_LEFT, {
-          user: socket.user,
-          message: sysMsg,
-        });
+      //   io.to(roomId).emit(SOCKET_EVENTS.ROOM_USER_LEFT, {
+      //     user: socket.user,
+      //     message: sysMsg,
+      //   });
 
-        socket.hasAnnouncedJoin = false;
-        socket.leaveTimer = null;
-      }, 300);
+      //   socket.hasAnnouncedJoin = false;
+      //   socket.leaveTimer = null;
+      // }, 300);
     } catch (err) {
       console.error("[room:leave]", err.message);
     }

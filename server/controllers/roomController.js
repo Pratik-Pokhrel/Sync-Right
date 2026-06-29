@@ -1,5 +1,8 @@
 import Room from "../models/Room.js";
 import Session from "../models/Session.js";
+import Message from "../models/Message.js";
+import { getIO } from "../utils/socketInstance.js";
+import { SOCKET_EVENTS } from "../utils/socketEvents.js";
 
 // HELPER FUNCTION
 // Fetch a room by ID, throws an error if not found
@@ -70,6 +73,31 @@ const populatedRoom = async (roomId) => {
     .populate("participants", "username");
 };
 
+// HELPER FUNCTION
+// Saves a system message to the DB and broadcasts it to the socket room.
+// Called only from joinRoom and leaveRoom — the two true membership-change events.
+// This is the single correct place for join/leave announcements; the socket
+// ROOM_JOIN / ROOM_LEAVE events are channel-only and must not write these messages.
+
+const emitSystemMessage = async (roomId, senderId, text, socketEvent, user) => {
+  const sysMsg = await Message.create({
+    room: roomId,
+    sender: senderId,
+    text,
+    type: "system",
+  });
+
+  // Populate sender so the client receives the same shape as a regular chat message
+  const populated = await Message.findById(sysMsg._id)
+    .populate("sender", "username")
+    .lean();
+
+  const io = getIO();
+  if (io) {
+    io.to(roomId.toString()).emit(socketEvent, { user, message: populated });
+  }
+};
+
 // CREATE ROOM -> POST /rooms/create (protected)
 
 // The authentiated user becomes the host
@@ -119,7 +147,8 @@ export const createRoom = async (req, res, next) => {
 // 6. Session logic :
 //    - If no active Session exists -> creates one (the created one is the host)
 //    - If an active Session exists -> adds this user as participant into it
-// 7. re-query with populate -> formatRoom -> respond
+// 7. System message saved to DB + broadcast via socket (single source of truth for join announcements)
+// 8. re-query with populate -> formatRoom -> respond
 
 export const joinRoom = async (req, res, next) => {
   try {
@@ -188,6 +217,18 @@ export const joinRoom = async (req, res, next) => {
       await session.save(); // Save the updated session document with the new participant
     }
 
+    // System Message — fires here (REST layer) not in the socket ROOM_JOIN event.
+    // socket ROOM_JOIN fires on every chat panel mount (page load, navigation, StrictMode).
+    // This REST endpoint is called exactly once per actual membership change, so the
+    // "user joined the room" message is written and broadcast exactly once.
+    await emitSystemMessage(
+      room._id,
+      userId,
+      `${req.user.username} joined the room`,
+      SOCKET_EVENTS.ROOM_USER_JOINED,
+      { _id: req.user._id, username: req.user.username, role: req.user.role },
+    );
+
     // re-query with populate so formatRoom has username
     // room.participants at this point is an array of raw ObjectIds (we just pushed userId)
     // We must re-query to get the populated user Objects
@@ -240,6 +281,20 @@ export const leaveRoom = async (req, res, next) => {
         await session.save();
       }
     }
+
+    // System Message — broadcast BEFORE updating room.participants below.
+    // socket.io channel membership is separate from DB room.participants, so all
+    // connected sockets still receive this even after the DB is updated.
+    // But emitting first is semantically correct: announce while the room is still live.
+    await emitSystemMessage(
+      room._id,
+      userId,
+      isHost
+        ? `${req.user.username} (host) closed the room`
+        : `${req.user.username} left the room`,
+      SOCKET_EVENTS.ROOM_USER_LEFT,
+      { _id: req.user._id, username: req.user.username, role: req.user.role },
+    );
 
     // Update the Room
     if (isHost) {
@@ -309,7 +364,7 @@ export const listRooms = async (req, res, next) => {
     const rooms = await Room.find({ isPrivate: false })
       .populate("host", "username")
       .populate("participants", "username")
-      .sort({ created: -1 }); // Sort rooms by creation date, newest first
+      .sort({ createdAt: -1 }); // Sort rooms by creation date, newest first  [fix: was { created: -1 }, wrong field name]
 
     return res.status(200).json({
       success: true,
