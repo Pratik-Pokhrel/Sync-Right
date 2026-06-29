@@ -3,11 +3,13 @@ import { Link, useParams, useLocation } from "react-router-dom";
 import { connectSocket } from "../utils/socket";
 import { tokenStorage } from "../utils/tokenStorage";
 import useChat from "../hooks/useChat";
+import useWebRTC from "../hooks/useWebRTC";
 import ChatPanel from "../components/chat/ChatPanel";
+import CallPanel from "../components/chat/CallPanel";
 import WhiteboardPanel from "../components/whiteboard/WhiteboardPanel";
 import api  from "../utils/api";
 
-const TABS = ["Chat", "Whiteboard"];
+const TABS = ["Chat", "Call", "Whiteboard"];
 
 const RoomChat = () => {
   const { roomId } = useParams();
@@ -45,6 +47,22 @@ const RoomChat = () => {
     error,
     connected,
   } = useChat(roomId);
+
+  const {
+    isJoined,
+    isConnecting,
+    error: callError,
+    localStream,
+    remoteParticipants,
+    audioEnabled,
+    videoEnabled,
+    connectionState,
+    currentUserName,
+    joinCall,
+    leaveCall,
+    toggleAudio,
+    toggleVideo,
+  } = useWebRTC(roomId);
 
   if (!socketReady) {
     return (
@@ -108,6 +126,22 @@ const RoomChat = () => {
               error={error}
               connected={connected}
               roomName={roomName}
+            />
+          ) : activeTab === "Call" ? (
+            <CallPanel
+              isJoined={isJoined}
+              isConnecting={isConnecting}
+              error={callError}
+              localStream={localStream}
+              remoteParticipants={remoteParticipants}
+              audioEnabled={audioEnabled}
+              videoEnabled={videoEnabled}
+              connectionState={connectionState}
+              currentUserName={currentUserName}
+              joinCall={joinCall}
+              leaveCall={leaveCall}
+              toggleAudio={toggleAudio}
+              toggleVideo={toggleVideo}
             />
           ) : (
             <WhiteboardPanel roomId={roomId} isHost={isHost}/>
