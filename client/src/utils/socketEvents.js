@@ -40,4 +40,8 @@ export const SOCKET_EVENTS = {
   WHITEBOARD_DRAWING: "whiteboard:drawing",
   WHITEBOARD_UNDO: "whiteboard:undo",
   WHITEBOARD_CLEAR: "whiteboard:clear",
+
+  // Whiteboard screen-share style pin (host only, broadcast to whole room)
+  WHITEBOARD_SHARE_START: "whiteboard:share_start",
+  WHITEBOARD_SHARE_STOP: "whiteboard:share_stop",
 };

@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 
 // Base URL is shared with the REST client; reuse the same env var so the
 // client and socket both point at the same backend in dev and prod.
-const SOCKET_URL = import.meta.env.SERVER_API_URL || "http://localhost:8000";
+const SOCKET_URL = "http://192.168.1.92:8000";
 
 let socket = null;
 
