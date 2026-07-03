@@ -13,6 +13,8 @@ const getBoard = (roomId) => {
       strokes: [],
       userStrokeIds: new Map(),
       hostId: null,
+      isShared: false,
+      sharedBy: null,
     });
   }
   return boardState.get(roomId);
@@ -59,7 +61,11 @@ export const RegisterWhiteboardEvents = (io, socket) => {
         });
       }
 
-      socket.emit(SOCKET_EVENTS.WHITEBOARD_SYNC, { strokes: board.strokes });
+      // isShared is included so a client that joins late (or reconnects) while the whiteboard is already pinned knows to render it pinned too
+      socket.emit(SOCKET_EVENTS.WHITEBOARD_SYNC, {
+        strokes: board.strokes,
+        isShared: board.isShared,
+      });
     } catch (err) {
       console.error("[whiteboard:join]", err.message);
     }
@@ -172,5 +178,32 @@ export const RegisterWhiteboardEvents = (io, socket) => {
     } catch (err) {
       console.error("[whiteboard:clear]", err.message);
     }
+  });
+
+  // whiteboard:share_start -> host pins the whiteboard for every participant in the call (like a screen share)
+  // Only the host can trigger it, but the event is broadcast to the whole room so everyone's UI switches at the same time
+  socket.on(SOCKET_EVENTS.WHITEBOARD_SHARE_START, ({ roomId }) => {
+    if (!roomId || !socket.rooms.has(roomId)) return;
+    if (!isHostUser(roomId, socket.user._id)) return;
+
+    const board = getBoard(roomId);
+    board.isShared = true;
+    board.sharedBy = { _id: socket.user._id, username: socket.user.username };
+
+    io.to(roomId).emit(SOCKET_EVENTS.WHITEBOARD_SHARE_START, {
+      sharedBy: board.sharedBy,
+    });
+  });
+
+  // whiteboard:share_stop -> host unpins it for everyone
+  socket.on(SOCKET_EVENTS.WHITEBOARD_SHARE_STOP, ({ roomId }) => {
+    if (!roomId || !socket.rooms.has(roomId)) return;
+    if (!isHostUser(roomId, socket.user._id)) return;
+
+    const board = getBoard(roomId);
+    board.isShared = false;
+    board.sharedBy = null;
+
+    io.to(roomId).emit(SOCKET_EVENTS.WHITEBOARD_SHARE_STOP, {});
   });
 };

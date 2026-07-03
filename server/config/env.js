@@ -18,6 +18,10 @@ export const ENV = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
+
+  // TURN credentials
+  TURN_USERNAME: process.env.TURN_USERNAME,
+  TURN_CREDENTIAL: process.env.TURN_CREDENTIAL,
 };
 
 // Fail fast if any required environment variables are missing
