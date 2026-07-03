@@ -1,5 +1,4 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-import useWhiteboard from "../../hooks/useWhiteboard";
 
 const CANVAS_W = 1200;
 const CANVAS_H = 800;
@@ -52,10 +51,15 @@ const drawPath = (ctx, points, tool, color, width) => {
   ctx.restore();
 };
 
-const WhiteboardPanel = ({ roomId, isHost = false }) => {
-  const { strokes, activeStrokes, emitStroke, emitDrawing, emitUndo, emitClear } =
-    useWhiteboard(roomId);
-
+const WhiteboardPanel = ({
+  isHost = false,
+  strokes,
+  activeStrokes,
+  emitStroke,
+  emitDrawing,
+  emitUndo,
+  emitClear,
+}) => {
   const mainRef = useRef(null);
   const previewRef = useRef(null);
 
