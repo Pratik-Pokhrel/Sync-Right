@@ -6,6 +6,7 @@ import {
 import { hashToken } from "../utils/hashToken.js";
 import { ENV } from "../config/env.js";
 import jwt from "jsonwebtoken";
+import cloudinary from "../config/cloudinary.js";
 
 // cookie options for the refresh token
 const REFRESH_COOKIE_OPTIONS = {
@@ -178,4 +179,54 @@ export const getMe = async (req, res) => {
     success: true,
     user: req.user,
   });
+};
+
+// upload / replace profile picture -> PATCH / auth/avatar (protected)
+// req.file is populated by the "uploadAvatar" multer middleware (memory storage)
+export const uploadProfilePicture = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No image file provided",
+      });
+    }
+
+    // public_id = user's own ID -> guarentees a re-upload overwrites the previous avatar automatically
+    const publicId = `sync-right/avatars/${req.user._id}`;
+
+    // upload the in-memory file buffer to cloudinary as a data URI
+    // overwrite : true -> reusing the same public_id replaces the old file
+    // transformation : server-side resize/crop so we never store an oversized original; face aware crop for a clean circular look
+    const uploadResult = await cloudinary.uploader.upload(
+      `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+      {
+        public_id: publicId,
+        overwrite: true,
+        resource_type: "image",
+        transformation: [
+          { width: 400, height: 400, crop: "fill", gravity: "face" },
+          { quality: "auto", fetch_format: "auto" }, // auto-serves WebP/AVIF where supported
+        ],
+      },
+    );
+
+    // here user.select("+avatarPublicId") is not needed -> because we're writing, not selecting the avatarPublicId
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        avatar: uploadResult.secure_url,
+        avatarPublicId: uploadResult.public_id,
+      },
+      { new: true }, // return the updated user document
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile picture updated successfully",
+      avatar: user.avatar, // return the updated avatar
+    });
+  } catch (error) {
+    next(error);
+  }
 };
