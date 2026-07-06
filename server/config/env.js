@@ -22,10 +22,21 @@ export const ENV = {
   // TURN credentials
   TURN_USERNAME: process.env.TURN_USERNAME,
   TURN_CREDENTIAL: process.env.TURN_CREDENTIAL,
+
+  // cloudinary credentials
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
 };
 
 // Fail fast if any required environment variables are missing
-const required = ["MONGO_URI", "PORT"];
+const required = [
+  "MONGO_URI",
+  "PORT",
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
+];
 required.forEach((key) => {
   if (!ENV[key])
     throw new Error(`Missing required environment variable: ${key}`);
