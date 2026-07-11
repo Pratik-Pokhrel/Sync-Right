@@ -230,3 +230,32 @@ export const uploadProfilePicture = async (req, res, next) => {
     next(error);
   }
 };
+
+// Remove Profile Picture -> DELETE /auth/avatar (protected)
+// Reverts the user to the generated default avatar (frontend handles the fallback rendering when avatar is null, nothing default is stored in DB)
+export const removeProfilePicture = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id).select("+avatarPublicId");
+
+    if (user.avatarPublicId) {
+      // Best-effort delete from Cloudinary, if this fails (e.g. already
+      // deleted), don't block clearing the DB reference
+      await cloudinary.uploader
+        .destroy(user.avatarPublicId)
+        .catch((err) =>
+          console.error("[cloudinary] destroy failed:", err.message),
+        );
+    }
+
+    user.avatar = null;
+    user.avatarPublicId = null;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile picture removed",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
