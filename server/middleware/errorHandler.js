@@ -28,6 +28,20 @@ export const errorHandler = (err, req, res, next) => {
     return res.status(401).json({ success: false, message: "Token expired" });
   }
 
+  // Multer error ( file too large / wrong field name )
+  if (err.name === "MulterError") {
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "Image must be 10 MB or smaller"
+        : err.message;
+    return res.status(400).json({ success: false, message });
+  }
+
+  // check file-type rejection thrown from upload.js middleware
+  if (err.message === "Only JPEG, PNG, JPG or WEBP images are allowed") {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+
   //Fallback for any other unhandled errors
   const statusCode = err.statusCode || 500;
   const message =

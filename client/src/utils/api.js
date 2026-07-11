@@ -53,4 +53,17 @@ api.interceptors.response.use(
   },
 );
 
+export const uploadProfilePicture = async (file) => {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const response = await api.patch("/auth/avatar", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data;
+};
+
 export default api;

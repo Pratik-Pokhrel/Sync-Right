@@ -1,22 +1,81 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import api, { uploadProfilePicture } from '../utils/api';
+import { getAvatarUrl, getDisplayName } from '../utils/avatar';
 import { connectSocket, disconnectSocket } from '../utils/socket';
 import { tokenStorage } from '../utils/tokenStorage';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+  const [user, setUser] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarMessage, setAvatarMessage] = useState('');
 
   useEffect(() => {
     const token = tokenStorage.getToken();
     if (token) {
       connectSocket(token);
     }
+
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        const currentUser = response.data?.user;
+        setUser(currentUser);
+        setAvatarUrl(getAvatarUrl(currentUser));
+      } catch (error) {
+        console.error('Failed to fetch current user', error);
+      }
+    };
+
+    fetchCurrentUser();
   }, []);
 
   const handleLogout = () => {
     disconnectSocket();
     tokenStorage.removeToken();
     navigate('/login');
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarMessage('Please choose a valid image file.');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setAvatarMessage('Please choose an image smaller than 10MB.');
+      event.target.value = '';
+      return;
+    }
+
+    setUploadingAvatar(true);
+    setAvatarMessage('');
+
+    try {
+      const response = await uploadProfilePicture(file);
+      setUser((prevUser) => {
+        const nextUser = prevUser ? { ...prevUser, avatar: response.avatar } : { avatar: response.avatar };
+        setAvatarUrl(getAvatarUrl(nextUser));
+        return nextUser;
+      });
+      setAvatarMessage('Profile picture updated successfully.');
+    } catch (error) {
+      setAvatarMessage(error.response?.data?.message || 'Unable to update profile picture.');
+    } finally {
+      setUploadingAvatar(false);
+      event.target.value = '';
+    }
   };
 
   return (
@@ -34,11 +93,29 @@ const Dashboard = () => {
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.06)_30%,rgba(255,255,255,0.03)_60%,transparent_100%)]" />
             <div className="absolute inset-x-6 top-6 h-24 rounded-full bg-white/10 blur-3xl" />
             <div className="relative z-10">
-              <div className="flex justify-between items-center gap-6">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-sky-300/70 mb-2">Welcome</p>
-                  <h1 className="text-4xl font-semibold text-white mb-2">Welcome to Sync-Right</h1>
-                  <p className="text-slate-300">You are successfully logged in</p>
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={handleAvatarClick}
+                    disabled={uploadingAvatar}
+                    className="group relative flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-slate-900/70 shadow-lg shadow-slate-950/30 transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-70"
+                    aria-label="Upload profile picture"
+                  >
+                    <img
+                      src={avatarUrl || getAvatarUrl(user)}
+                      alt="Profile"
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center rounded-full bg-slate-950/60 text-lg font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                      {uploadingAvatar ? '…' : '+'}
+                    </span>
+                  </button>
+                  <div>
+                    <p className="mb-1 text-xs uppercase tracking-[0.3em] text-sky-300/70">Welcome</p>
+                    <h1 className="text-2xl font-semibold text-white">{getDisplayName(user)}</h1>
+                    <p className="text-sm text-slate-300">{user?.email || 'You are successfully logged in'}</p>
+                  </div>
                 </div>
                 <div className="flex gap-3 flex-wrap justify-end">
                   <Link
@@ -48,8 +125,8 @@ const Dashboard = () => {
                     Rooms
                   </Link>
                   {(() => {
-                    const user = tokenStorage.getUser();
-                    if (user && user.role === 'admin') {
+                    const currentUser = tokenStorage.getUser();
+                    if (currentUser && currentUser.role === 'admin') {
                       return (
                         <Link to="/admin" className="rounded-2xl bg-violet-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:bg-violet-400">
                           Admin Panel
@@ -66,6 +143,18 @@ const Dashboard = () => {
                   </button>
                 </div>
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+              {avatarMessage && (
+                <p className={`mt-4 text-sm ${avatarMessage.includes('successfully') ? 'text-emerald-300' : 'text-rose-300'}`}>
+                  {avatarMessage}
+                </p>
+              )}
             </div>
           </div>
 
