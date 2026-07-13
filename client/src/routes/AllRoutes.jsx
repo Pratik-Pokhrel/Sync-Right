@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
+import Profile from '../pages/Profile';
 import OauthCallback from '../pages/OauthCallback';
 import Rooms from '../pages/Rooms';
 import RoomChat from '../pages/RoomChat';
@@ -16,6 +17,7 @@ const AllRoutes = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/oauth/callback" element={<OauthCallback />} />
       <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
+      <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
       <Route path="/rooms" element={<ProtectedRoute element={<Rooms />} />} />
       <Route path="/rooms/:roomId/chat" element={<ProtectedRoute element={<RoomChat />} />} />
       <Route
