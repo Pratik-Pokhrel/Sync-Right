@@ -27,6 +27,12 @@ export const ENV = {
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+
+  // Redis configuration
+  REDIS_HOST: process.env.REDIS_HOST,
+  REDIS_PORT: parseInt(process.env.REDIS_PORT),
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD || undefined,
+  REDIS_TLS: process.env.REDIS_TLS === "true", // convert string to boolean
 };
 
 // Fail fast if any required environment variables are missing
