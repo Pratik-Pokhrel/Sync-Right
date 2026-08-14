@@ -3,7 +3,13 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../utils/generateTokens.js";
-import { hashToken } from "../utils/hashToken.js";
+// hashToken import removed -> no longer hashing/comparing refresh tokens
+// here directly, that logic now lives inside tokenStore.js
+import {
+  storeRefreshToken,
+  verifyRefreshToken,
+  revokeRefreshToken,
+} from "../utils/tokenStore.js";
 import { ENV } from "../config/env.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../config/cloudinary.js";
@@ -79,9 +85,8 @@ export const login = async (req, res, next) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // Store only the hashed refresh token in the database for security reasons
-    user.refreshToken = hashToken(refreshToken);
-    await user.save();
+    // No more user.refreshToken field write after Redis implementation, no user.save() needed here.
+    await storeRefreshToken(user._id.toString(), refreshToken);
 
     // Refresh token is sent as an HTTP-only cookie, while the access token is sent in the response body
     res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
@@ -119,12 +124,23 @@ export const refresh = async (req, res, next) => {
       });
     }
 
-    // Check the hashed token matches what's in DB (revocation check)
-    const user = await User.findById(payload.id).select("+refreshToken");
-    if (!user || user.refreshToken !== hashToken(token)) {
+    // check the hashed token matches what's in DB (revocation check) -> revocation check now goes through Redis instead of a User.select("+refreshToken")query
+    const isValid = await verifyRefreshToken(payload.id, token);
+    if (!isValid) {
       return res.status(401).json({
         success: false,
         message: "Refresh token revoked or reuse detected",
+      });
+    }
+
+    // (***) still need the user doc, but no longer need +refreshToken selected
+    // since Redis is now the source of truth for the token itself. Only used
+    // here for role (goes into the new access token payload).
+    const user = await User.findById(payload.id);
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found or inactive",
       });
     }
 
@@ -132,8 +148,9 @@ export const refresh = async (req, res, next) => {
     const newAccessToken = generateAccessToken(user);
     const newRefreshToken = generateRefreshToken(user);
 
-    user.refreshToken = hashToken(newRefreshToken); // Update the stored hashed refresh token in the database
-    await user.save();
+    // Updating the stored hashed refresh token in the database -> replaced with a Redis overwrite (storeRefreshToken sets a fresh TTL too,
+    // so rotation resets the 7-day window instead of counting down from original login)
+    await storeRefreshToken(user._id.toString(), newRefreshToken);
 
     res.cookie("refreshToken", newRefreshToken, REFRESH_COOKIE_OPTIONS); // Send the new refresh token as an HTTP-only cookie
 
@@ -158,7 +175,8 @@ export const logout = async (req, res, next) => {
       // Nullify the stored token -> revokes refresh capability
       const payload = jwt.decode(token); // Decode the token to get the user ID without verifying the signature, since we just want to identify the user for logout
       if (payload?.id) {
-        await User.findByIdAndUpdate(payload.id, { refreshToken: null }); // Clear the stored hashed refresh token in the database to effectively log the user out
+        //Clear the stored hashed refresh token in the database to effectively log the user out -> replaced User.findByIdAndUpdate(... refreshToken: null) with a direct Redis key delete. Same effect (revoked immediately), no DB write.
+        await revokeRefreshToken(payload.id);
       }
     }
 

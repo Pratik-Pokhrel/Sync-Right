@@ -26,7 +26,7 @@ export const authLimiter = rateLimit({
 
 // Everything else (like rooms, messages, calls, admin) is treated in less strict manner
 export const apiLimiter = rateLimit({
-  windowsMs: 2 * 60 * 1000, // 2 minutes
+  windowMs: 2 * 60 * 1000, // 2 minutes
   max: 100, // limit each IP to 100 requests per windowMs
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
