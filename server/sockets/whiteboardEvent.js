@@ -1,5 +1,6 @@
 import Room from "../models/Room.js";
 import { SOCKET_EVENTS } from "../utils/socketEvents.js";
+import { saveBoardSnapshot, getBoardSnapshot } from "../utils/boardCache.js";
 
 const MAX_SNAPSHOT_STROKES = 200;
 
@@ -31,8 +32,10 @@ const isRoomMember = (room, userId) => {
   );
 };
 
+// persist() now writes to Redis (saveBoardSnapshot) instead of Room.findByIdAndUpdate
+// The old version hit MongoDB on every single stroke, a DB write at drawing speed
 const persist = (roomId, strokes) => {
-  Room.findByIdAndUpdate(roomId, { boardSnapshot: strokes }).catch((err) =>
+  saveBoardSnapshot(roomId, strokes).catch((err) =>
     console.error("[whiteboard] persist error: ", err.message),
   );
 };
@@ -50,9 +53,16 @@ export const RegisterWhiteboardEvents = (io, socket) => {
       const board = getBoard(roomId);
       board.hostId = room.host.toString();
 
-      // Cold start / Server restart -> hydrate from DB
-      if (board.strokes.length === 0 && room.boardSnapshot?.length > 0) {
-        board.strokes = [...room.boardSnapshot];
+      //  Cold start / Server restart
+      // hydrate from DB -> now tries Redis first (fast path), only falls back to Room.boardSnapshot in Mongo if Redis has nothing
+      //  (TTL expired or a fresh deploy with no cache warmed yet).
+      if (board.strokes.length === 0) {
+        let hydrated = await getBoardSnapshot(roomId);
+        if (hydrated.length === 0 && room.boardSnapshot?.length > 0) {
+          hydrated = room.boardSnapshot;
+        }
+
+        board.strokes = [...hydrated];
         board.strokes.forEach((s) => {
           if (!board.userStrokeIds.has(s.userId)) {
             board.userStrokeIds.set(s.userId, []);

@@ -13,6 +13,8 @@ import adminRoutes from "./routes/admin.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import callRoutes from "./routes/call.routes.js";
 
+import { authLimiter, apiLimiter } from "./config/rateLimiter.js";
+
 const app = express();
 
 // Security and parsing middleware - keep this at the top before defining routes to ensure all requests are processed through these middlewares first
@@ -40,12 +42,12 @@ app.use(morgan("dev")); // Log HTTP requests in development mode
 // }
 
 // --------------- All the routes go here ---------///
-app.use("/auth", authRoutes); // auth-related routes like /register, /login and so on
-app.use("/auth", oauthRoutes); // new -> /auth/google, /auth/google/callback
-app.use("/admin", adminRoutes); // admin-related routes like /admin/users, /admin/users/:id/role and so on
-app.use("/rooms", roomRoutes); // room related routes
-app.use("/messages", messageRoutes); // message related routes
-app.use("/call", callRoutes); // call related routes
+app.use("/auth", authLimiter, authRoutes); // auth-related routes like /register, /login and so on
+app.use("/auth", authLimiter, oauthRoutes); // new -> /auth/google, /auth/google/callback
+app.use("/admin", apiLimiter, adminRoutes); // admin-related routes like /admin/users, /admin/users/:id/role and so on
+app.use("/rooms", apiLimiter, roomRoutes); // room related routes
+app.use("/messages", apiLimiter, messageRoutes); // message related routes
+app.use("/call", apiLimiter, callRoutes); // call related routes
 
 // Health check route - useful for monitoring and testing if the server is running
 app.get("/health", (req, res) => {
