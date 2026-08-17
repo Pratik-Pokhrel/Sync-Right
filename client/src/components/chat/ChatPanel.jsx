@@ -96,7 +96,7 @@ const ChatPanel = ({
             {roomName || "Chat"}
           </h2>
           <p className="text-xs text-slate-400">
-            {connected ? "Connected" : "Disconnected — trying to reconnect…"}
+            {connected ? "Connected" : "Disconnected : trying to reconnect…"}
           </p>
         </div>
         {hasMore && (

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import api, { API_BASE_URL } from '../utils/api';
 import { tokenStorage } from '../utils/tokenStorage';
 import FormInput from '../components/FormInput';
 import AuthPageLayout from '../components/AuthPageLayout';
@@ -89,7 +89,7 @@ const Login = () => {
 
         <div className="mt-6 space-y-4">
           <a
-            href="http://localhost:8000/auth/google"
+            href={`${API_BASE_URL}/auth/google`}
             className="flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-medium text-white transition hover:border-white/20 hover:bg-white/15"
             >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 533.5 544.3" className="h-5 w-5">

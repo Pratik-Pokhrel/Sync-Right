@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/api';
 import { tokenStorage } from '../utils/tokenStorage';
 
 const AdminUsers = () => {
@@ -11,7 +12,7 @@ const AdminUsers = () => {
   const fetchUsers = async (p = 1) => {
     try {
       const token = tokenStorage.getToken();
-      const res = await axios.get(`http://localhost:8000/admin/users?page=${p}&limit=${limit}`, {
+      const res = await axios.get(`${API_BASE_URL}/admin/users?page=${p}&limit=${limit}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data.data.users || []);
@@ -30,7 +31,7 @@ const AdminUsers = () => {
     try {
       const token = tokenStorage.getToken();
       await axios.patch(
-        `http://localhost:8000/admin/users/${id}/status`,
+        `${API_BASE_URL}/admin/users/${id}/status`,
         { isActive },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -44,7 +45,7 @@ const AdminUsers = () => {
     if (!confirm('Delete this user permanently?')) return;
     try {
       const token = tokenStorage.getToken();
-      await axios.delete(`http://localhost:8000/admin/users/${id}`, {
+      await axios.delete(`${API_BASE_URL}/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchUsers(page);

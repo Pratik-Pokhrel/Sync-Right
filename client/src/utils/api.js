@@ -1,9 +1,28 @@
 import axios from "axios";
 import { tokenStorage } from "./tokenStorage";
 
+export const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+
+  if (envUrl) {
+    return envUrl.replace(/\/$/, "");
+  }
+
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol || "http:";
+
+  if (["localhost", "127.0.0.1", "::1"].includes(hostname)) {
+    return "http://localhost:8000";
+  }
+
+  return `${protocol}//${hostname}:8000`;
+};
+
+export const API_BASE_URL = getApiBaseUrl();
+
 // Create axios instance with base URL pointing to the backend server
 const api = axios.create({
-  baseURL: "http://192.168.1.74:8000",
+  baseURL: API_BASE_URL,
   withCredentials: true, // Enable sending cookies with requests for refresh token
 });
 
@@ -31,7 +50,7 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          "http://192.168.1.74:8000/refresh",
+          `${API_BASE_URL}/refresh`,
           {},
           { withCredentials: true },
         );

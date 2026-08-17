@@ -1,8 +1,9 @@
 import { io } from "socket.io-client";
+import { API_BASE_URL } from "./api";
 
-// Base URL is shared with the REST client; reuse the same env var so the
-// client and socket both point at the same backend in dev and prod.
-const SOCKET_URL = "http://192.168.1.92:8000";
+// Base URL is shared with the REST client so the socket and HTTP calls point
+// to the same backend regardless of whether the app is running on localhost or a LAN IP.
+const SOCKET_URL = API_BASE_URL;
 
 let socket = null;
 
