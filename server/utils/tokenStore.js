@@ -1,7 +1,7 @@
 import { redis } from "../config/redis.js";
 import { hashToken } from "./hashToken.js";
 
-const REFRESH_TTL = 7 * 24 * 60 * 60; // 7 days(in seconds)
+const REFRESH_TTL = 3 * 24 * 60 * 60; // 3 days(in seconds)
 
 // store the hashed refresh token in Redis with a TTL -> to replace the "user.refreshToken" in authcontroller.js
 // no mongodb write, no cleanup needed since the key now expires on its own

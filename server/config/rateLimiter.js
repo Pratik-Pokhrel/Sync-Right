@@ -36,3 +36,5 @@ export const apiLimiter = rateLimit({
   },
   store: makeStore("api"),
 });
+
+// "store" is the key here, it tells express-rate-limit to use Redis for storing the counters instead of the default in-memory store.

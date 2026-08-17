@@ -4,6 +4,7 @@ import { ENV } from "./env.js";
 const redisConfig = {
   host: ENV.REDIS_HOST,
   port: ENV.REDIS_PORT,
+  username: ENV.REDIS_USERNAME,
   password: ENV.REDIS_PASSWORD,
   tls: ENV.REDIS_TLS ? {} : undefined,
   retryStrategy: (times) => Math.min(times * 100, 3000), // exponential backoff for reconnection attempts
