@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { uploadProfilePicture, removeProfilePicture } from '../utils/api';
 import { getAvatarUrl, getDisplayName } from '../utils/avatar';
+import { disconnectSocket } from '../utils/socket';
 import { tokenStorage } from '../utils/tokenStorage';
 
 const Profile = () => {
@@ -61,6 +62,12 @@ const Profile = () => {
 
   const handleBackClick = () => {
     navigate('/dashboard');
+  };
+
+  const handleLogout = () => {
+    disconnectSocket();
+    tokenStorage.removeToken();
+    navigate('/login');
   };
 
   const handleAvatarClick = () => {
@@ -160,12 +167,20 @@ const Profile = () => {
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.06)_30%,rgba(255,255,255,0.03)_60%,transparent_100%)]" />
             <div className="absolute inset-x-6 top-6 h-24 rounded-full bg-white/10 blur-3xl" />
             <div className="relative z-10">
-              <button
-                onClick={handleBackClick}
-                className="mb-4 text-sm text-sky-300 hover:text-sky-200 transition flex items-center gap-2"
-              >
-                ← Back to Dashboard
-              </button>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <button
+                  onClick={handleBackClick}
+                  className="cursor-pointer text-sm text-sky-300 transition duration-200 ease-out hover:-translate-y-0.5 hover:text-sky-200"
+                >
+                  ← Back to Dashboard
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="cursor-pointer rounded-xl border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-100 transition duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:bg-rose-500/20 hover:shadow-lg hover:shadow-rose-500/10"
+                >
+                  Logout
+                </button>
+              </div>
               <h1 className="text-3xl font-semibold text-white">My Profile</h1>
             </div>
           </div>
@@ -180,7 +195,7 @@ const Profile = () => {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(true)}
-                    className="relative h-40 w-40 rounded-full border-4 border-white/20 bg-slate-900/70 shadow-lg shadow-slate-950/30 overflow-hidden cursor-pointer transition hover:border-white/40"
+                    className="relative h-40 w-40 rounded-full border-4 border-white/20 bg-slate-900/70 shadow-lg shadow-slate-950/30 overflow-hidden cursor-pointer transition duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-cyan-300/60 hover:shadow-cyan-500/10"
                     title="Click to view full profile picture"
                   >
                     <img
@@ -199,7 +214,7 @@ const Profile = () => {
                       type="button"
                       onClick={handleAvatarClick}
                       disabled={uploadingAvatar}
-                      className="rounded-full bg-cyan-500 p-3 text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="cursor-pointer rounded-full bg-cyan-500 p-3 text-white shadow-lg shadow-cyan-500/20 transition duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.05] hover:bg-cyan-400 hover:shadow-cyan-500/30 disabled:cursor-not-allowed disabled:opacity-70"
                       title="Update profile picture"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,7 +226,7 @@ const Profile = () => {
                         type="button"
                         onClick={handleRemoveAvatar}
                         disabled={removingAvatar}
-                        className="rounded-full bg-rose-500 p-3 text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-400 disabled:cursor-not-allowed disabled:opacity-70"
+                        className="cursor-pointer rounded-full bg-rose-500 p-3 text-white shadow-lg shadow-rose-500/20 transition duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.05] hover:bg-rose-400 hover:shadow-rose-500/30 disabled:cursor-not-allowed disabled:opacity-70"
                         title="Remove profile picture"
                       >
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,8 +241,8 @@ const Profile = () => {
               {/* Message Display */}
               {message && (
                 <div className={`rounded-lg p-4 text-center text-sm font-medium ${
-                  messageType === 'success' 
-                    ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-200' 
+                  messageType === 'success'
+                    ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-200'
                     : messageType === 'error'
                     ? 'bg-rose-500/20 border border-rose-500/50 text-rose-200'
                     : 'bg-amber-500/20 border border-amber-500/50 text-amber-200'
@@ -297,7 +312,7 @@ const Profile = () => {
                 {/* Close button */}
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="absolute top-4 right-4 z-10 rounded-full bg-slate-950/80 p-2 text-white transition hover:bg-slate-950 focus:outline-none"
+                  className="absolute top-4 right-4 z-10 cursor-pointer rounded-full bg-slate-950/80 p-2 text-white transition duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.05] hover:bg-slate-950 focus:outline-none"
                   title="Close (ESC)"
                 >
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
