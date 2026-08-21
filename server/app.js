@@ -27,6 +27,7 @@ app.use(
       "http://192.168.1.74:5173",
       "http://192.168.1.92:5173",
       "http://192.168.56.1:5173",
+      "http://127.0.0.1:5173",
     ], // The frontend's URL
     credentials: true, // Allow cookies to be sent in cross-origin requests
   }),

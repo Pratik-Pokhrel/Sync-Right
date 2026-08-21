@@ -149,7 +149,7 @@ export const refresh = async (req, res, next) => {
     const newRefreshToken = generateRefreshToken(user);
 
     // Updating the stored hashed refresh token in the database -> replaced with a Redis overwrite (storeRefreshToken sets a fresh TTL too,
-    // so rotation resets the 7-day window instead of counting down from original login)
+    // so rotation resets the 3-day window instead of counting down from original login)
     await storeRefreshToken(user._id.toString(), newRefreshToken);
 
     res.cookie("refreshToken", newRefreshToken, REFRESH_COOKIE_OPTIONS); // Send the new refresh token as an HTTP-only cookie
