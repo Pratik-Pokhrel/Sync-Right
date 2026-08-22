@@ -25,6 +25,14 @@ const MessageSchema = new Schema(
       enum: ["text", "system"], // 'system' for join/leave announcements
       default: "text",
     },
+
+    // E2E encryption flag
+    // false (default) -> text holds plaintext (sys messages always stay this way as they aren't encrypted)
+    // true -> text holds JSON.stringify({ [recipientUserId]: base64(IV+ciphertext) }), one ciphertext per room participant the sender had shared a derived key for
+    encrypted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );

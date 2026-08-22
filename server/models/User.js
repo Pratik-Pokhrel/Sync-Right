@@ -67,6 +67,17 @@ const UserSchema = new Schema(
       enum: ["local", "google"],
       default: "local",
     },
+
+    twoFactorSecret: {
+      type: String,
+      default: null,
+      select: false, // never expose secret in queries by default -> same as that of password
+    },
+
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   {
