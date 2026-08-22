@@ -6,6 +6,7 @@ import {
   getUserById,
   setUserStatus,
   deleteUser,
+  getAuditLog,
 } from "../controllers/adminController.js";
 
 const router = express.Router();
@@ -18,5 +19,8 @@ router.get("/users", getAllUsers);
 router.get("/users/:id", getUserById);
 router.patch("/users/:id/status", setUserStatus);
 router.delete("/users/:id", deleteUser);
+
+// Audit log route
+router.get("/audit-log", getAuditLog);
 
 export default router;

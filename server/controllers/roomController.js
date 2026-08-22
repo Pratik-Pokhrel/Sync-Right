@@ -3,6 +3,7 @@ import Session from "../models/Session.js";
 import Message from "../models/Message.js";
 import { getIO } from "../utils/socketInstance.js";
 import { SOCKET_EVENTS } from "../utils/socketEvents.js";
+import { audit } from "../utils/audit.js";
 
 // HELPER FUNCTION
 // Fetch a room by ID, throws an error if not found
@@ -119,6 +120,13 @@ export const createRoom = async (req, res, next) => {
     // Re-query with populate - Room.create() returns the raw document, host is still an ObjectId at this point
     const populated = await populatedRoom(room._id);
 
+    // audit
+    audit("room.created", {
+      actor: req.user._id,
+      target: room._id,
+      targetModel: "Room",
+    });
+
     // // Return room without the password field ( select: flse handles this automatically on create, but we do toObject() for clarity)
     // const safeRoom = room.toObject();
     // delete safeRoom.password; // Ensure password is not sent in the response
@@ -229,6 +237,14 @@ export const joinRoom = async (req, res, next) => {
       { _id: req.user._id, username: req.user.username, role: req.user.role },
     );
 
+    // audit
+    audit("room.joined", {
+      actor: userId,
+      target: room._id,
+      targetModel: "Room",
+      req,
+    });
+
     // re-query with populate so formatRoom has username
     // room.participants at this point is an array of raw ObjectIds (we just pushed userId)
     // We must re-query to get the populated user Objects
@@ -309,6 +325,14 @@ export const leaveRoom = async (req, res, next) => {
 
     await room.save(); // Save the updated room document
 
+    // audit
+    audit("room.left", {
+      actor: userId,
+      target: room._id,
+      targetModel: "Room",
+      req,
+    });
+
     return res.status(200).json({
       success: true,
       message: isHost
@@ -342,6 +366,14 @@ export const deleteRoom = async (req, res, next) => {
     if (session) await session.endSession();
 
     await room.deleteOne(); // Delete the room document
+
+    // audit
+    audit("room.deleted", {
+      actor: req.user._id,
+      target: room._id,
+      targetModel: "Room",
+      req,
+    });
 
     return res.status(200).json({
       success: true,

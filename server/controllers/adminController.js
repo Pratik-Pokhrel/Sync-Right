@@ -1,6 +1,9 @@
 import User from "../models/User.js";
 import Room from "../models/Room.js";
 
+import AuditLog from "../models/AuditLog.js";
+import { audit } from "../utils/audit.js";
+
 // GET /admin/users -> a paginated list of all the users available in the system
 export const getAllUsers = async (req, res, next) => {
   try {
@@ -70,6 +73,15 @@ export const setUserStatus = async (req, res, next) => {
       });
     }
 
+    // audit
+    audit("user.status_changed", {
+      actor: req.user._id,
+      target: user._id,
+      targetModel: "User",
+      meta: { isActive },
+      req,
+    });
+
     return res.status(200).json({
       success: true,
       message: `User ${isActive ? "activated" : "deactivated"} successfully`,
@@ -137,11 +149,45 @@ export const deleteUser = async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+
+    // audit
+    audit("user.deleted", {
+      actor: req.user._id,
+      target: user._id,
+      targetModel: "User",
+      req,
+    });
+
     return res.status(200).json({
       success: true,
       message: "User deleted successfully",
     });
   } catch (error) {
     next(error);
+  }
+};
+
+// GET /admin/audit?action=user.login&page=1&limit=50
+export const getAuditLog = async (req, res, next) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 50);
+    const filter = req.query.action ? { action: req.query.action } : {};
+
+    const [logs, total] = await Promise.all([
+      AuditLog.find(filter)
+        .populate("actor", "username email")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      AuditLog.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: { logs, total, page, pages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    next(err);
   }
 };
