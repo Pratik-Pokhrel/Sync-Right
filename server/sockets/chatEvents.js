@@ -104,7 +104,9 @@ export const registerChatEvents = (io, socket) => {
 
   // ----------- chat:message -----------------//
 
-  socket.on(SOCKET_EVENTS.CHAT_MESSAGE, async ({ roomId, text }) => {
+  // After E2E implementation, this event will encrypt the message and payload carries a new parameter "encrypted"
+  // when true, 'text' will be a JSON string of { [recipientUserId]: base64(IV+ciphertext) } produced at client side and server stores and relay it as is
+  socket.on(SOCKET_EVENTS.CHAT_MESSAGE, async ({ roomId, text, encrypted }) => {
     try {
       if (!roomId || !text?.trim()) return;
 
@@ -120,6 +122,7 @@ export const registerChatEvents = (io, socket) => {
         sender: socket.user._id,
         text: text.trim(),
         type: "text",
+        encrypted: !!encrypted,
       });
 
       const populated = await Message.findById(message._id)
@@ -207,5 +210,27 @@ export const registerChatEvents = (io, socket) => {
         },
       });
     }
+  });
+
+  // ------------- E2E key relay ------------------//
+  // server is a dumb relay : it never stores, logs, or inspects key material, just forwards JWK public keys
+  socket.on(SOCKET_EVENTS.E2E_PUBLIC_KEY, ({ roomId, publicKeyJwk }) => {
+    if (!roomId || !publicKeyJwk) return;
+    if (!socket.rooms.has(roomId)) return;
+
+    socket.to(roomId).emit(SOCKET_EVENTS.E2E_PEER_KEY, {
+      userId: socket.user._id.toString(),
+      publicKeyJwk,
+    });
+  });
+
+  // late joiner asks the existing participants for their keys
+  socket.on(SOCKET_EVENTS.E2E_REQUEST_KEYS, ({ roomId }) => {
+    if (!roomId) return;
+    if (!socket.rooms.has(roomId)) return;
+
+    socket.to(roomId).emit(SOCKET_EVENTS.E2E_KEY_REQUEST, {
+      fromUserId: socket.user._id.toString(),
+    });
   });
 };

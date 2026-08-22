@@ -26,6 +26,19 @@ export const protect = async (req, res, next) => {
       });
     }
 
+    // E2E - MFA gate
+    /* A token issued mid-login for a 2FA-enabled
+      account carries mfaPending: true and must not unlock protected
+      routes until the OTP step succeeds
+    */
+    if (payload.mfaPending) {
+      return res.status(401).json({
+        success: false,
+        message: "MFA verification required",
+        mfaPending: true,
+      });
+    }
+
     // Attach user info to the request object for use in subsequent middleware or route handlers
     const user = await User.findById(payload.id);
     if (!user || !user.isActive) {
