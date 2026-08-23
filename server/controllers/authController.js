@@ -316,8 +316,8 @@ export const removeProfilePicture = async (req, res, next) => {
 export const setup2FA = async (req, res, next) => {
   try {
     const secret = authenticator.generateSecret(); // base32 string
-    const otp = authenticator.keyuri(req.user.email, "SyncRight", secret);
-    const qrCode = await QRCode.toDataURL(otp);
+    const otpauth = authenticator.keyuri(req.user.email, "SyncRight", secret);
+    const qrCode = await QRCode.toDataURL(otpauth);
 
     // 10 min - TTL -> unconfirmed secrets never touch the User document
     await redis.set(`2fa:setup:${req.user._id}`, secret, "EX", 600);
@@ -335,6 +335,13 @@ export const setup2FA = async (req, res, next) => {
 export const verifySetup2FA = async (req, res, next) => {
   try {
     const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "2FA token is required",
+      });
+    }
+
     const secret = await redis.get(`2fa:setup:${req.user._id}`);
 
     if (!secret) {
@@ -353,6 +360,10 @@ export const verifySetup2FA = async (req, res, next) => {
       });
     }
 
+    await User.findByIdAndUpdate(req.user._id, {
+      twoFactorSecret: secret,
+      twoFactorEnabled: true,
+    });
     await redis.del(`2fa:setup:${req.user._id}`); // remove the secret from Redis
 
     audit("user.2fa_enable", { actor: req.user._id, req });
@@ -373,7 +384,7 @@ export const verify2FA = async (req, res, next) => {
   try {
     const { mfaToken, otp } = req.body;
 
-    if ((!mfaToken, !otp)) {
+    if (!mfaToken || !otp) {
       return res.status(400).json({
         success: false,
         message: "mfaToken and otp are required",
