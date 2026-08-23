@@ -13,12 +13,53 @@ import adminRoutes from "./routes/admin.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import callRoutes from "./routes/call.routes.js";
 
+import { csrfErrorHandler } from "./middleware/csrf.js";
 import { authLimiter, apiLimiter } from "./config/rateLimiter.js";
 
 const app = express();
 
-// Security and parsing middleware - keep this at the top before defining routes to ensure all requests are processed through these middlewares first
-app.use(helmet());
+// Security and parsing middleware - kept at the top before defining routes to ensure all requests are processed through these middlewares first
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"], // no inline JS, no eval
+        styleSrc: ["'self'", "'unsafe-inline'"], // inline styles OK (tailwind)
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://lh3.googleusercontent.com",
+          "https://api.dicebear.com",
+        ],
+        connectSrc: [
+          "'self'",
+          "ws://localhost:8000",
+          "http://localhost:8000",
+          "ws://192.168.1.74:8000",
+          "ws://192.168.1.92:8000",
+        ], // deployed origins - adjusted for local development
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"], // prevents clickjacking
+        upgradeInsecureRequests: [],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // needed for WebRTC peer connections
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  }),
+);
+
+// for production level security
+// if (ENV.NODE_ENV === "production") {
+//   app.use(
+//     helmet.hsts({
+//       maxAge: 31536000,
+//       includeSubDomains: true,
+//       preload: true,
+//     }),
+//   );
+// }
 
 app.use(
   cors({
@@ -56,6 +97,7 @@ app.get("/health", (req, res) => {
   res.status(200).json({ success: true, message: "Server is healthy" });
 });
 
+app.use(csrfErrorHandler);
 app.use(errorHandler); // Global error handling middleware, should be registered after all routes
 
 export default app;

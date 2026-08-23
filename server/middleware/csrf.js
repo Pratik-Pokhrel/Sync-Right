@@ -11,12 +11,15 @@ export const csrfProtection = csrf({
 });
 
 // sends the csrf token to the client so it can be attached to the next state changing request (like before hitting /auth/google)
+export const sendCsrfToken = (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+};
+
+// Must be registered AFTER routes and BEFORE the global errorHandler
 export const csrfErrorHandler = (err, req, res, next) => {
   if (err.code !== "EBADCSRFTOKEN") return next(err);
-  return res
-    .status(403)
-    .json({
-      success: false,
-      message: "Invalid CSRF token, refresh and try again",
-    });
+  return res.status(403).json({
+    success: false,
+    message: "Invalid CSRF token, refresh and try again",
+  });
 };

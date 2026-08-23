@@ -3,10 +3,14 @@ import {
   googleRedirect,
   googleCallback,
 } from "../controllers/oauthController.js";
+import { csrfProtection, sendCsrfToken } from "../middleware/csrf.js";
 
 const router = express.Router();
 
-router.get("/google", googleRedirect);
+// client fetches this before initiating OAuth
+router.get("/csrf-token", csrfProtection, sendCsrfToken);
+
+router.get("/google", csrfProtection, googleRedirect);
 router.get("/google/callback", googleCallback);
 
 export default router;
