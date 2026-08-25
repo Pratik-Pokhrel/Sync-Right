@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { uploadProfilePicture, removeProfilePicture } from '../utils/api';
+import api, {
+  uploadProfilePicture,
+  removeProfilePicture,
+  setup2FA,
+  verifySetup2FA,
+  disable2FA,
+} from '../utils/api';
 import { getAvatarUrl, getDisplayName } from '../utils/avatar';
 import { disconnectSocket } from '../utils/socket';
 import { tokenStorage } from '../utils/tokenStorage';
@@ -16,6 +22,10 @@ const Profile = () => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [twoFactorSetup, setTwoFactorSetup] = useState(null);
+  const [setupToken, setSetupToken] = useState('');
+  const [disableOtp, setDisableOtp] = useState('');
+  const [twoFactorLoading, setTwoFactorLoading] = useState(false);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -141,6 +151,63 @@ const Profile = () => {
       setMessage(error.response?.data?.message || 'Unable to remove profile picture.');
     } finally {
       setRemovingAvatar(false);
+    }
+  };
+
+  const handleSetup2FA = async () => {
+    setTwoFactorLoading(true);
+    setMessage('');
+
+    try {
+      const response = await setup2FA();
+      setTwoFactorSetup(response);
+      setSetupToken('');
+      setMessageType('success');
+      setMessage('Scan the QR code, then enter the code from your authenticator app.');
+    } catch (error) {
+      setMessageType('error');
+      setMessage(error.response?.data?.message || 'Unable to start 2FA setup.');
+    } finally {
+      setTwoFactorLoading(false);
+    }
+  };
+
+  const handleVerifySetup2FA = async (event) => {
+    event.preventDefault();
+    setTwoFactorLoading(true);
+    setMessage('');
+
+    try {
+      await verifySetup2FA(setupToken);
+      setUser((prevUser) => ({ ...prevUser, twoFactorEnabled: true }));
+      setTwoFactorSetup(null);
+      setSetupToken('');
+      setMessageType('success');
+      setMessage('Two-factor authentication is now enabled.');
+    } catch (error) {
+      setMessageType('error');
+      setMessage(error.response?.data?.message || 'Unable to verify the 2FA code.');
+    } finally {
+      setTwoFactorLoading(false);
+    }
+  };
+
+  const handleDisable2FA = async (event) => {
+    event.preventDefault();
+    setTwoFactorLoading(true);
+    setMessage('');
+
+    try {
+      await disable2FA(disableOtp);
+      setUser((prevUser) => ({ ...prevUser, twoFactorEnabled: false }));
+      setDisableOtp('');
+      setMessageType('success');
+      setMessage('Two-factor authentication has been disabled.');
+    } catch (error) {
+      setMessageType('error');
+      setMessage(error.response?.data?.message || 'Unable to disable 2FA.');
+    } finally {
+      setTwoFactorLoading(false);
     }
   };
 
@@ -289,6 +356,93 @@ const Profile = () => {
                     {user?.role || 'User'}
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-4 border-t border-white/10 pt-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Two-factor authentication</h2>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {user.twoFactorEnabled
+                      ? 'Your account is protected with an authenticator app.'
+                      : 'Add an authenticator app for an extra sign-in check.'}
+                  </p>
+                </div>
+
+                {user.twoFactorEnabled ? (
+                  <form onSubmit={handleDisable2FA} className="space-y-3">
+                    <label htmlFor="disable-2fa-otp" className="block text-sm text-slate-300">
+                      Current authenticator code
+                    </label>
+                    <input
+                      id="disable-2fa-otp"
+                      type="text"
+                      value={disableOtp}
+                      onChange={(event) => setDisableOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      required
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-300"
+                      placeholder="123456"
+                    />
+                    <button
+                      type="submit"
+                      disabled={twoFactorLoading}
+                      className="rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {twoFactorLoading ? 'Working...' : 'Disable 2FA'}
+                    </button>
+                  </form>
+                ) : twoFactorSetup ? (
+                  <form onSubmit={handleVerifySetup2FA} className="space-y-4">
+                    <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+                      <img src={twoFactorSetup.qrCode} alt="2FA setup QR code" className="h-48 w-48 rounded-lg bg-white p-2" />
+                      <p className="break-all text-center text-xs text-slate-400">{twoFactorSetup.otpauth}</p>
+                    </div>
+                    <label htmlFor="setup-2fa-token" className="block text-sm text-slate-300">
+                      Verification code
+                    </label>
+                    <input
+                      id="setup-2fa-token"
+                      type="text"
+                      value={setupToken}
+                      onChange={(event) => setSetupToken(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      required
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-300"
+                      placeholder="123456"
+                    />
+                    <div className="flex gap-3">
+                      <button
+                        type="submit"
+                        disabled={twoFactorLoading}
+                        className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {twoFactorLoading ? 'Verifying...' : 'Enable 2FA'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTwoFactorSetup(null)}
+                        className="rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSetup2FA}
+                    disabled={twoFactorLoading}
+                    className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {twoFactorLoading ? 'Starting setup...' : 'Set up 2FA'}
+                  </button>
+                )}
               </div>
             </div>
           </div>

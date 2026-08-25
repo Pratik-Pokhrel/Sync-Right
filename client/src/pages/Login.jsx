@@ -13,6 +13,8 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mfaToken, setMfaToken] = useState('');
+  const [otp, setOtp] = useState('');
 
   const handleChange = (e) => {
     setFormData({
@@ -27,8 +29,17 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await api.post('/auth/login', formData);
-      const { accessToken } = response.data;
+      const response = await api.post(
+        mfaToken ? '/auth/2fa/verify' : '/auth/login',
+        mfaToken ? { mfaToken, otp } : formData,
+      );
+      const { accessToken, mfaPending, mfaToken: nextMfaToken } = response.data;
+
+      if (mfaPending && nextMfaToken) {
+        setMfaToken(nextMfaToken);
+        setOtp('');
+        return;
+      }
 
       // Store the access token
       tokenStorage.setToken(accessToken);
@@ -56,38 +67,64 @@ const Login = () => {
           )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <FormInput
-            label="Email Address"
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Enter your email"
-            required
-            />
+          {mfaToken ? (
+            <>
+              <div>
+                <h2 className="text-xl font-semibold text-white">Two-factor verification</h2>
+                <p className="mt-2 text-sm text-slate-300">
+                  Enter the six-digit code from your authenticator app to finish signing in.
+                </p>
+              </div>
+              <FormInput
+                label="Authenticator code"
+                type="text"
+                id="otp"
+                name="otp"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="123456"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                required
+              />
+            </>
+          ) : (
+            <>
+              <FormInput
+                label="Email Address"
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter your email"
+                required
+              />
 
-          <FormInput
-            label="Password"
-            type="password"
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Enter your password"
-            required
-          />
+              <FormInput
+                label="Password"
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                required
+              />
+            </>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-base font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-cyan-500/60"
             >
-            {loading ? 'Signing In...' : 'Sign In'}
+            {loading ? 'Verifying...' : mfaToken ? 'Verify code' : 'Sign In'}
           </button>
         </form>
 
-        <div className="mt-6 space-y-4">
+        {!mfaToken && <div className="mt-6 space-y-4">
           <a
             href={`${API_BASE_URL}/auth/google`}
             className="flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-medium text-white transition hover:border-white/20 hover:bg-white/15"
@@ -107,7 +144,20 @@ const Login = () => {
               Sign up here
             </Link>
           </p>
-        </div>
+        </div>}
+        {mfaToken && (
+          <button
+            type="button"
+            onClick={() => {
+              setMfaToken('');
+              setOtp('');
+              setError('');
+            }}
+            className="mt-6 w-full text-sm text-slate-300 transition hover:text-white"
+          >
+            Back to sign in
+          </button>
+        )}
       </div>
       </div>
     </AuthPageLayout>

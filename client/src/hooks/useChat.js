@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../utils/api";
 import { getSocket } from "../utils/socket";
 import { SOCKET_EVENTS } from "../utils/socketEvents";
+import useE2E from "./useE2E";
 
 const TYPING_DEBOUNCE_MS = 1500; // stop-typing fires after this much inactivity
 const HISTORY_PAGE_SIZE = 50; // matches the server's default page size
@@ -21,6 +22,30 @@ const useChat = (roomId) => {
   const oldestPage = useRef(1);
 
   const socket = getSocket();
+
+  const { encryptForRoom, decryptFromSender } = useE2E(roomId);
+
+  //resolves each message's displayed text -> decrypts if
+  // message.encrypted is true, leaves plaintext/system messages as-is
+  const resolveMessage = useCallback(
+    async (message) => {
+      if (!message || message.type === "system" || !message.encrypted) {
+        return message;
+      }
+      const senderId =
+        typeof message.sender === "string"
+          ? message.sender
+          : message.sender?._id;
+      const plaintext = await decryptFromSender(message.text, senderId);
+      return { ...message, text: plaintext };
+    },
+    [decryptFromSender],
+  );
+
+  const resolveMessageList = useCallback(
+    async (list) => Promise.all(list.map(resolveMessage)),
+    [resolveMessage],
+  );
 
   // ------------------ Join socket room on mount, leave on unmount ---------------------//
   useEffect(() => {
@@ -115,21 +140,31 @@ const useChat = (roomId) => {
       socket.off(SOCKET_EVENTS.DISCONNECT, onDisconnect);
       socket.off(SOCKET_EVENTS.CONNECT_ERROR, onConnectError);
     };
-  }, [socket, roomId]);
+  }, [socket, roomId, resolveMessage, resolveMessageList]);
 
   // ----------- sendMessage-------------------- //
   const sendMessage = useCallback(
-    (text) => {
+    async (text) => {
       if (!socket || !text?.trim()) return;
+      const trimmed = text.trim();
 
-      socket.emit(SOCKET_EVENTS.CHAT_MESSAGE, { roomId, text: text.trim() });
-
-      // Stop the typing indicator the moment a message is sent
-      if (isTyping.current) {
-        socket.emit(SOCKET_EVENTS.CHAT_TYPING, {
+      const encryptedPayload = await encryptForRoom(trimmed);
+      if (encryptedPayload) {
+        socket.emit(SOCKET_EVENTS.CHAT_MESSAGE, {
           roomId,
-          isTyping: false,
+          text: encryptedPayload,
+          encrypted: true,
         });
+      } else {
+        socket.emit(SOCKET_EVENTS.CHAT_MESSAGE, {
+          roomId,
+          text: trimmed,
+          encrypted: false,
+        });
+      }
+
+      if (isTyping.current) {
+        socket.emit(SOCKET_EVENTS.CHAT_TYPING, { roomId, isTyping: false });
         isTyping.current = false;
       }
       if (typingTimer.current) {
@@ -137,7 +172,7 @@ const useChat = (roomId) => {
         typingTimer.current = null;
       }
     },
-    [socket, roomId],
+    [socket, roomId, encryptForRoom],
   );
 
   // onTyping -> wire to <input onChange={onTyping}>
@@ -187,7 +222,7 @@ const useChat = (roomId) => {
     } finally {
       setLoadingMore(false);
     }
-  }, [roomId, loadingMore, hasMore]);
+  }, [roomId, loadingMore, hasMore, resolveMessageList]);
 
   return {
     messages,
