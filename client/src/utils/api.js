@@ -90,4 +90,19 @@ export const removeProfilePicture = async () => {
   return response.data;
 };
 
+export const setup2FA = async () => {
+  const response = await api.post("/auth/2fa/setup");
+  return response.data;
+};
+
+export const verifySetup2FA = async (token) => {
+  const response = await api.post("/auth/2fa/verify-setup", { token });
+  return response.data;
+};
+
+export const disable2FA = async (otp) => {
+  const response = await api.post("/auth/2fa/disable", { otp });
+  return response.data;
+};
+
 export default api;
