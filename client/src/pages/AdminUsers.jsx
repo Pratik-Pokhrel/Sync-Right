@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { API_BASE_URL } from '../utils/api';
-import { tokenStorage } from '../utils/tokenStorage';
+import api from '../utils/api';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
@@ -11,10 +9,7 @@ const AdminUsers = () => {
 
   const fetchUsers = async (p = 1) => {
     try {
-      const token = tokenStorage.getToken();
-      const res = await axios.get(`${API_BASE_URL}/admin/users?page=${p}&limit=${limit}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get(`/admin/users?page=${p}&limit=${limit}`);
       setUsers(res.data.data.users || []);
       setTotal(res.data.data.total || 0);
       setPage(p);
@@ -29,11 +24,9 @@ const AdminUsers = () => {
 
   const toggleActive = async (id, isActive) => {
     try {
-      const token = tokenStorage.getToken();
-      await axios.patch(
-        `${API_BASE_URL}/admin/users/${id}/status`,
+      await api.patch(
+        `/admin/users/${id}/status`,
         { isActive },
-        { headers: { Authorization: `Bearer ${token}` } },
       );
       fetchUsers(page);
     } catch (e) {
@@ -44,10 +37,7 @@ const AdminUsers = () => {
   const deleteUser = async (id) => {
     if (!confirm('Delete this user permanently?')) return;
     try {
-      const token = tokenStorage.getToken();
-      await axios.delete(`${API_BASE_URL}/admin/users/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/admin/users/${id}`);
       fetchUsers(page);
     } catch (e) {
       console.error('Failed to delete user', e);

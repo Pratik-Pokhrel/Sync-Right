@@ -20,6 +20,25 @@ export const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
+let csrfToken = null;
+let csrfTokenRequest = null;
+
+export const getCsrfToken = async () => {
+  if (csrfToken) return csrfToken;
+  if (!csrfTokenRequest) {
+    csrfTokenRequest = axios
+      .get(`${API_BASE_URL}/auth/csrf-token`, { withCredentials: true })
+      .then((response) => {
+        csrfToken = response.data?.csrfToken || null;
+        return csrfToken;
+      })
+      .finally(() => {
+        csrfTokenRequest = null;
+      });
+  }
+  return csrfTokenRequest;
+};
+
 // Create axios instance with base URL pointing to the backend server
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -28,10 +47,17 @@ const api = axios.create({
 
 // Request interceptor - add access token to every request
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const token = tokenStorage.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    const method = config.method?.toUpperCase();
+    const needsCsrf = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+    if (needsCsrf) {
+      const token = await getCsrfToken();
+      if (token) config.headers["X-CSRF-Token"] = token;
     }
     return config;
   },

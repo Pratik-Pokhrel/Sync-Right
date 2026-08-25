@@ -10,7 +10,7 @@ const router = express.Router();
 // client fetches this before initiating OAuth
 router.get("/csrf-token", csrfProtection, sendCsrfToken);
 
-router.get("/google", csrfProtection, googleRedirect);
+router.get("/google", googleRedirect);
 router.get("/google/callback", googleCallback);
 
 export default router;

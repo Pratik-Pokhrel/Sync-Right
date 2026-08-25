@@ -1,4 +1,5 @@
 import { OAuth2Client } from "google-auth-library";
+import { randomBytes, timingSafeEqual } from "crypto";
 import { ENV } from "../config/env.js";
 
 import User from "../models/User.js";
@@ -28,12 +29,24 @@ const REFRESH_COOKIE_OPTIONS = {
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
 };
 
+const OAUTH_STATE_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: ENV.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: 10 * 60 * 1000,
+  path: "/auth",
+};
+
 // 1st Step :: Redirect user to Google's consent screen
 export const googleRedirect = (req, res) => {
+  const state = randomBytes(32).toString("hex");
+  res.cookie("oauthState", state, OAUTH_STATE_COOKIE_OPTIONS);
+
   const url = googleClient.generateAuthUrl({
     access_type: "offline", // Request a refresh token for long-term access from google
     scope: ["profile", "email"], // Request access to user's profile and email
     prompt: "consent", // Prompt the user to grant consent to access their profile and email
+    state,
   });
   res.redirect(url);
 };
@@ -41,7 +54,19 @@ export const googleRedirect = (req, res) => {
 //2nd step :: Handle the callback after the Google redirects back to your app
 export const googleCallback = async (req, res, next) => {
   try {
-    const { code } = req.query;
+    const { code, state } = req.query;
+    const savedState = req.cookies?.oauthState;
+    res.clearCookie("oauthState", OAUTH_STATE_COOKIE_OPTIONS);
+
+    if (
+      !state ||
+      !savedState ||
+      state.length !== savedState.length ||
+      !timingSafeEqual(Buffer.from(state), Buffer.from(savedState))
+    ) {
+      return res.redirect(`${ENV.CLIENT_URL}/login?error=oauth_state_invalid`);
+    }
+
     if (!code) {
       return res.redirect(`${ENV.CLIENT_URL}/login?error=oauth_failed`);
     }
