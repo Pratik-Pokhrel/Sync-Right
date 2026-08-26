@@ -38,6 +38,8 @@ app.use(
           "http://localhost:8000",
           "ws://192.168.1.74:8000",
           "ws://192.168.1.92:8000",
+          "http://192.168.64.1:8000",
+          "ws://192.168.64.1:8000",
         ], // deployed origins - adjusted for local development
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         objectSrc: ["'none'"],
@@ -69,6 +71,7 @@ app.use(
       "http://192.168.1.92:5173",
       "http://192.168.56.1:5173",
       "http://127.0.0.1:5173",
+      "http://192.168.64.1:5173",
     ], // The frontend's URL
     credentials: true, // Allow cookies to be sent in cross-origin requests
   }),

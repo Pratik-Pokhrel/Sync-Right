@@ -25,7 +25,7 @@ const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: false, // ENV.NODE_ENV === "production", // only send cookie over HTTPS in production
   sameSite: "lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+  maxAge: 3 * 24 * 60 * 60 * 1000, // match the Redis refresh-token TTL
 };
 
 // Register Function

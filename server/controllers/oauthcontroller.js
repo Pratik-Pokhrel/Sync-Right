@@ -7,7 +7,7 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../utils/generateTokens.js";
-import { hashToken } from "../utils/hashToken.js";
+import { storeRefreshToken } from "../utils/tokenStore.js";
 
 const googleClient = new OAuth2Client(
   ENV.GOOGLE_CLIENT_ID,
@@ -26,7 +26,7 @@ const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === "production", // only send cookie over HTTPS in production
   sameSite: "Strict", // sameSite: "Strict" means the cookie will only be sent in a first-party context and not with requests initiated by third party websites, providing better protection against CSRF attacks.
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+  maxAge: 3 * 24 * 60 * 60 * 1000, // match the Redis refresh-token TTL
 };
 
 const OAUTH_STATE_COOKIE_OPTIONS = {
@@ -110,8 +110,7 @@ export const googleCallback = async (req, res, next) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    user.refreshToken = hashToken(refreshToken);
-    await user.save();
+    await storeRefreshToken(user._id.toString(), refreshToken);
 
     res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
 
