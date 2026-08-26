@@ -18,12 +18,14 @@ const useChat = (roomId) => {
   // Refs hold values that should not trigger re-renders
   const typingTimer = useRef(null);
   const isTyping = useRef(false);
+  const rawMessagesRef = useRef([]);
+  const resolutionVersion = useRef(0);
   // Track the oldest page we've loaded so loadOlder() can paginate correctly
   const oldestPage = useRef(1);
 
   const socket = getSocket();
 
-  const { encryptForRoom, decryptFromSender } = useE2E(roomId);
+  const { ready: e2eReady, keysVersion, encryptForRoom, decryptFromSender } = useE2E(roomId);
 
   //resolves each message's displayed text -> decrypts if
   // message.encrypted is true, leaves plaintext/system messages as-is
@@ -47,12 +49,42 @@ const useChat = (roomId) => {
     [resolveMessage],
   );
 
+  const setResolvedMessages = useCallback(
+    async (list) => {
+      const version = ++resolutionVersion.current;
+      rawMessagesRef.current = list;
+      const resolved = await resolveMessageList(list);
+      if (version === resolutionVersion.current) setMessages(resolved);
+    },
+    [resolveMessageList],
+  );
+
+  const appendResolvedMessage = useCallback(
+    async (message) => {
+      const current = rawMessagesRef.current;
+      if (current.some((item) => item._id && message._id && item._id === message._id)) {
+        return;
+      }
+      const nextMessages = [...current, message];
+      rawMessagesRef.current = nextMessages;
+      await setResolvedMessages(nextMessages);
+    },
+    [setResolvedMessages],
+  );
+
+  // A history message may arrive before the peer key exchange completes.
+  // Re-run decryption when a new key is derived, using the untouched payload.
+  useEffect(() => {
+    if (rawMessagesRef.current.length > 0) {
+      setResolvedMessages(rawMessagesRef.current);
+    }
+  }, [keysVersion, setResolvedMessages]);
+
   // ------------------ Join socket room on mount, leave on unmount ---------------------//
   useEffect(() => {
     if (!socket || !roomId) return;
 
     socket.emit(SOCKET_EVENTS.ROOM_JOIN, { roomId });
-    setConnected(true);
 
     // ── Listeners ──
 
@@ -60,26 +92,21 @@ const useChat = (roomId) => {
     // so the client keeps working if the server is fixed to { messages }.
     const onHistory = (payload) => {
       const list = payload?.messages ?? payload?.message ?? [];
-      setMessages(Array.isArray(list) ? list : []);
+      if (Array.isArray(list)) setResolvedMessages(list);
       // After the first history page, the oldest loaded page is page 1.
       oldestPage.current = 1;
     };
 
     const onMessage = ({ message }) => {
-      if (!message) return;
-      setMessages((prev) =>
-        prev.some((m) => m._id && message._id && m._id === message._id)
-          ? prev
-          : [...prev, message],
-      );
+      if (message) appendResolvedMessage(message);
     };
 
     const onUserJoined = ({ message }) => {
-      if (message) setMessages((prev) => [...prev, message]);
+      if (message) appendResolvedMessage(message);
     };
 
     const onUserLeft = ({ user, message }) => {
-      if (message) setMessages((prev) => [...prev, message]);
+      if (message) appendResolvedMessage(message);
       // Drop the leaver from the typing list in case they were typing.
       if (user?._id) {
         setTypingUsers((prev) => {
@@ -140,28 +167,28 @@ const useChat = (roomId) => {
       socket.off(SOCKET_EVENTS.DISCONNECT, onDisconnect);
       socket.off(SOCKET_EVENTS.CONNECT_ERROR, onConnectError);
     };
-  }, [socket, roomId, resolveMessage, resolveMessageList]);
+  }, [socket, roomId, appendResolvedMessage, setResolvedMessages]);
 
   // ----------- sendMessage-------------------- //
   const sendMessage = useCallback(
     async (text) => {
       if (!socket || !text?.trim()) return;
+      if (!e2eReady) {
+        setError("Secure messaging is still initializing. Please try again.");
+        return;
+      }
       const trimmed = text.trim();
 
       const encryptedPayload = await encryptForRoom(trimmed);
-      if (encryptedPayload) {
-        socket.emit(SOCKET_EVENTS.CHAT_MESSAGE, {
-          roomId,
-          text: encryptedPayload,
-          encrypted: true,
-        });
-      } else {
-        socket.emit(SOCKET_EVENTS.CHAT_MESSAGE, {
-          roomId,
-          text: trimmed,
-          encrypted: false,
-        });
+      if (!encryptedPayload) {
+        setError("Unable to encrypt this message. Please try again.");
+        return;
       }
+      socket.emit(SOCKET_EVENTS.CHAT_MESSAGE, {
+        roomId,
+        text: encryptedPayload,
+        encrypted: true,
+      });
 
       if (isTyping.current) {
         socket.emit(SOCKET_EVENTS.CHAT_TYPING, { roomId, isTyping: false });
@@ -172,7 +199,7 @@ const useChat = (roomId) => {
         typingTimer.current = null;
       }
     },
-    [socket, roomId, encryptForRoom],
+    [socket, roomId, e2eReady, encryptForRoom],
   );
 
   // onTyping -> wire to <input onChange={onTyping}>
@@ -206,7 +233,7 @@ const useChat = (roomId) => {
       const data = response.data || {};
       const older = data.messages ?? data.message ?? [];
       if (Array.isArray(older) && older.length > 0) {
-        setMessages((prev) => [...older, ...prev]);
+        setResolvedMessages([...older, ...rawMessagesRef.current]);
         oldestPage.current = nextPage;
       }
       if (typeof data.pagination?.hasMore === "boolean") {
@@ -222,7 +249,7 @@ const useChat = (roomId) => {
     } finally {
       setLoadingMore(false);
     }
-  }, [roomId, loadingMore, hasMore, resolveMessageList]);
+  }, [roomId, loadingMore, hasMore, setResolvedMessages]);
 
   return {
     messages,

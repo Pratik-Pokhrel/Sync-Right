@@ -16,6 +16,7 @@ import {
 // this idle before a session actually starts.
 const useE2E = (roomId) => {
   const [ready, setReady] = useState(false); // true once our own key pair exists
+  const [keysVersion, setKeysVersion] = useState(0);
   const socket = getSocket();
   const currentUserId = tokenStorage.getUser()?.id;
 
@@ -31,6 +32,10 @@ const useE2E = (roomId) => {
       const keyPair = await generateKeyPair();
       if (cancelled) return;
       keyPairRef.current = keyPair;
+
+      // Derive a private self-key so the sender can decrypt their own messages.
+      const selfKey = await deriveSharedKey(keyPair.privateKey, keyPair.publicKey);
+      peerKeysRef.current.set(currentUserId, selfKey);
 
       const publicKeyJwk = await exportPublicKey(keyPair);
       socket.emit(SOCKET_EVENTS.E2E_PUBLIC_KEY, { roomId, publicKeyJwk });
@@ -53,6 +58,7 @@ const useE2E = (roomId) => {
           peerPublicKey,
         );
         peerKeysRef.current.set(userId, sharedKey);
+        setKeysVersion((version) => version + 1);
       } catch (err) {
         console.error("[e2e] failed to derive shared key:", err.message);
       }
@@ -67,19 +73,20 @@ const useE2E = (roomId) => {
 
     socket.on(SOCKET_EVENTS.E2E_PEER_KEY, onPeerKey);
     socket.on(SOCKET_EVENTS.E2E_KEY_REQUEST, onKeyRequest);
+    const peerKeys = peerKeysRef.current;
 
     return () => {
       cancelled = true;
       socket.off(SOCKET_EVENTS.E2E_PEER_KEY, onPeerKey);
       socket.off(SOCKET_EVENTS.E2E_KEY_REQUEST, onKeyRequest);
       keyPairRef.current = null;
-      peerKeysRef.current.clear();
+      peerKeys.clear();
+      setKeysVersion(0);
       setReady(false);
     };
   }, [socket, roomId, currentUserId]);
 
-  // Encrypts plaintext once per known peer. Returns null if we don't have
-  // any peer keys yet (caller should fall back to plaintext in that case).
+  // Encrypts plaintext once per known peer, including the sender's self-key.
   const encryptForRoom = useCallback(async (plaintext) => {
     if (peerKeysRef.current.size === 0) return null;
 
@@ -109,7 +116,7 @@ const useE2E = (roomId) => {
     [currentUserId],
   );
 
-  return { ready, encryptForRoom, decryptFromSender };
+  return { ready, keysVersion, encryptForRoom, decryptFromSender };
 };
 
 export default useE2E;
