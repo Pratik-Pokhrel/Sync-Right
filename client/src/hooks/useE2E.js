@@ -34,7 +34,10 @@ const useE2E = (roomId) => {
       keyPairRef.current = keyPair;
 
       // Derive a private self-key so the sender can decrypt their own messages.
-      const selfKey = await deriveSharedKey(keyPair.privateKey, keyPair.publicKey);
+      const selfKey = await deriveSharedKey(
+        keyPair.privateKey,
+        keyPair.publicKey,
+      );
       peerKeysRef.current.set(currentUserId, selfKey);
 
       const publicKeyJwk = await exportPublicKey(keyPair);

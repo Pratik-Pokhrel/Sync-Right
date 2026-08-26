@@ -25,7 +25,12 @@ const useChat = (roomId) => {
 
   const socket = getSocket();
 
-  const { ready: e2eReady, keysVersion, encryptForRoom, decryptFromSender } = useE2E(roomId);
+  const {
+    ready: e2eReady,
+    keysVersion,
+    encryptForRoom,
+    decryptFromSender,
+  } = useE2E(roomId);
 
   //resolves each message's displayed text -> decrypts if
   // message.encrypted is true, leaves plaintext/system messages as-is
@@ -62,7 +67,11 @@ const useChat = (roomId) => {
   const appendResolvedMessage = useCallback(
     async (message) => {
       const current = rawMessagesRef.current;
-      if (current.some((item) => item._id && message._id && item._id === message._id)) {
+      if (
+        current.some(
+          (item) => item._id && message._id && item._id === message._id,
+        )
+      ) {
         return;
       }
       const nextMessages = [...current, message];
@@ -83,8 +92,7 @@ const useChat = (roomId) => {
   // ------------------ Join socket room on mount, leave on unmount ---------------------//
   useEffect(() => {
     if (!socket || !roomId) return;
-
-    socket.emit(SOCKET_EVENTS.ROOM_JOIN, { roomId });
+    let active = true;
 
     // ── Listeners ──
 
@@ -132,7 +140,14 @@ const useChat = (roomId) => {
       setError(message || "Unknown socket error");
     };
 
-    const onConnect = () => setConnected(true);
+    const joinRoom = () => {
+      socket.emit(SOCKET_EVENTS.ROOM_JOIN, { roomId });
+    };
+
+    const onConnect = () => {
+      setConnected(true);
+      joinRoom();
+    };
     const onDisconnect = () => setConnected(false);
     const onConnectError = (err) => {
       // Most common cause: invalid/expired token during handshake
@@ -150,6 +165,16 @@ const useChat = (roomId) => {
     socket.on(SOCKET_EVENTS.DISCONNECT, onDisconnect);
     socket.on(SOCKET_EVENTS.CONNECT_ERROR, onConnectError);
 
+    // Register listeners before joining so the server's immediate history response is not missed.
+    if (socket.connected) {
+      queueMicrotask(() => {
+        if (active) {
+          setConnected(true);
+          joinRoom();
+        }
+      });
+    }
+
     return () => {
       // Explicit leave when the component unmounts (e.g., navigating away
       // from the room page). The server still expects a REST leave for
@@ -166,6 +191,7 @@ const useChat = (roomId) => {
       socket.off(SOCKET_EVENTS.CONNECT, onConnect);
       socket.off(SOCKET_EVENTS.DISCONNECT, onDisconnect);
       socket.off(SOCKET_EVENTS.CONNECT_ERROR, onConnectError);
+      active = false;
     };
   }, [socket, roomId, appendResolvedMessage, setResolvedMessages]);
 

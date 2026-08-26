@@ -384,7 +384,7 @@ const Profile = () => {
                       maxLength={6}
                       required
                       className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-300"
-                      placeholder="123456"
+                      placeholder="e.g.123456"
                     />
                     <button
                       type="submit"
