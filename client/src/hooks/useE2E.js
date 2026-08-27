@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getSocket } from "../utils/socket";
 import { SOCKET_EVENTS } from "../utils/socketEvents";
 import { tokenStorage } from "../utils/tokenStorage";
 import {
@@ -14,10 +13,9 @@ import {
 // Manages the ECDH key pair for this session and a Map of derived AES
 // keys, one per peer in the room. Pass null/undefined for roomId to keep
 // this idle before a session actually starts.
-const useE2E = (roomId) => {
+const useE2E = (roomId, socket) => {
   const [ready, setReady] = useState(false); // true once our own key pair exists
   const [keysVersion, setKeysVersion] = useState(0);
-  const socket = getSocket();
   const currentUserId = tokenStorage.getUser()?.id;
 
   const keyPairRef = useRef(null);
@@ -27,6 +25,13 @@ const useE2E = (roomId) => {
     if (!socket || !roomId) return undefined;
 
     let cancelled = false;
+
+    const announceKeys = async () => {
+      if (!keyPairRef.current || cancelled) return;
+      const publicKeyJwk = await exportPublicKey(keyPairRef.current);
+      socket.emit(SOCKET_EVENTS.E2E_PUBLIC_KEY, { roomId, publicKeyJwk });
+      socket.emit(SOCKET_EVENTS.E2E_REQUEST_KEYS, { roomId });
+    };
 
     const init = async () => {
       const keyPair = await generateKeyPair();
@@ -39,13 +44,6 @@ const useE2E = (roomId) => {
         keyPair.publicKey,
       );
       peerKeysRef.current.set(currentUserId, selfKey);
-
-      const publicKeyJwk = await exportPublicKey(keyPair);
-      socket.emit(SOCKET_EVENTS.E2E_PUBLIC_KEY, { roomId, publicKeyJwk });
-
-      // Ask existing participants to resend their keys -> covers the case
-      // where we joined after everyone else already exchanged keys once.
-      socket.emit(SOCKET_EVENTS.E2E_REQUEST_KEYS, { roomId });
 
       setReady(true);
     };
@@ -70,18 +68,21 @@ const useE2E = (roomId) => {
     // A newcomer asked for keys -> resend ours so they can derive with us
     const onKeyRequest = async () => {
       if (!keyPairRef.current) return;
-      const publicKeyJwk = await exportPublicKey(keyPairRef.current);
-      socket.emit(SOCKET_EVENTS.E2E_PUBLIC_KEY, { roomId, publicKeyJwk });
+      await announceKeys();
     };
+
+    const onHistory = () => announceKeys();
 
     socket.on(SOCKET_EVENTS.E2E_PEER_KEY, onPeerKey);
     socket.on(SOCKET_EVENTS.E2E_KEY_REQUEST, onKeyRequest);
+    socket.on(SOCKET_EVENTS.CHAT_HISTORY, onHistory);
     const peerKeys = peerKeysRef.current;
 
     return () => {
       cancelled = true;
       socket.off(SOCKET_EVENTS.E2E_PEER_KEY, onPeerKey);
       socket.off(SOCKET_EVENTS.E2E_KEY_REQUEST, onKeyRequest);
+      socket.off(SOCKET_EVENTS.CHAT_HISTORY, onHistory);
       keyPairRef.current = null;
       peerKeys.clear();
       setKeysVersion(0);

@@ -1,17 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { getSocket } from "../utils/socket";
 import { SOCKET_EVENTS } from "../utils/socketEvents";
 
 // Pass null/undefined for roomId to keep this hook idle (e.g. before the
 // user has joined the session) — it will not touch the socket until a real
 // roomId is supplied.
-const useWhiteboard = (roomId) => {
+const useWhiteboard = (roomId, socket) => {
   const [strokes, setStrokes] = useState([]);
   const [activeStrokes, setActiveStrokes] = useState({});
   const [isShared, setIsShared] = useState(false);
   const [sharedBy, setSharedBy] = useState(null);
-
-  const socket = getSocket();
 
   useEffect(() => {
     if (!socket || !roomId) return;

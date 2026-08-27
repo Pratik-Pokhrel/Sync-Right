@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../utils/api";
-import { getSocket } from "../utils/socket";
 import { SOCKET_EVENTS } from "../utils/socketEvents";
 import useE2E from "./useE2E";
 
 const TYPING_DEBOUNCE_MS = 1500; // stop-typing fires after this much inactivity
 const HISTORY_PAGE_SIZE = 50; // matches the server's default page size
 
-const useChat = (roomId) => {
+const useChat = (roomId, socket) => {
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState({}); // { [userId]: username }
   const [error, setError] = useState(null);
@@ -23,14 +22,12 @@ const useChat = (roomId) => {
   // Track the oldest page we've loaded so loadOlder() can paginate correctly
   const oldestPage = useRef(1);
 
-  const socket = getSocket();
-
   const {
     ready: e2eReady,
     keysVersion,
     encryptForRoom,
     decryptFromSender,
-  } = useE2E(roomId);
+  } = useE2E(roomId, socket);
 
   //resolves each message's displayed text -> decrypts if
   // message.encrypted is true, leaves plaintext/system messages as-is
@@ -287,6 +284,7 @@ const useChat = (roomId) => {
     loadingMore,
     error,
     connected,
+    secureReady: e2eReady,
   };
 };
 

@@ -16,14 +16,10 @@ let socket = null;
    The token is forwarded through the "auth" payload so the server's socketAuth middleware can verify it during the handshake.
  */
 export const connectSocket = (accessToken) => {
-  if (socket?.connected) return socket;
-
-  // If a socket exists from a previous session but is disconnected (e.g. token refreshed), tear it down so we can build a fresh one with the new token.
-  if (socket) {
-    socket.removeAllListeners();
-    socket.disconnect();
-    socket = null;
-  }
+  // Reuse sockets that are still connecting as well as connected sockets.
+  // Replacing an in-flight socket during React Strict Mode or navigation
+  // aborts its handshake and leaves consumers attached to the old instance.
+  if (socket) return socket;
 
   socket = io(SOCKET_URL, {
     auth: { token: accessToken },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 import { connectSocket } from "../utils/socket";
 import { tokenStorage } from "../utils/tokenStorage";
@@ -15,7 +15,7 @@ const RoomChat = () => {
   const location = useLocation();
   const roomName = location.state?.roomName || "Chat";
 
-  const [socketReady, setSocketReady] = useState(false);
+  const [socket, setSocket] = useState(null);
   const [room, setRoom] = useState(null);
 
   // inSession = the user has clicked "Join Session" and the call is live.
@@ -26,8 +26,8 @@ const RoomChat = () => {
   useEffect(() => {
     const token = tokenStorage.getToken();
     if (token) {
-      connectSocket(token);
-      setSocketReady(true);
+      const nextSocket = connectSocket(token);
+      startTransition(() => setSocket(nextSocket));
     }
   }, []);
 
@@ -50,7 +50,8 @@ const RoomChat = () => {
     loadingMore,
     error: chatError,
     connected,
-  } = useChat(roomId);
+    secureReady,
+  } = useChat(roomId, socket);
 
   const {
     isConnecting,
@@ -65,7 +66,7 @@ const RoomChat = () => {
     leaveCall,
     toggleAudio,
     toggleVideo,
-  } = useWebRTC(roomId);
+  } = useWebRTC(roomId, socket);
 
   // Only join the whiteboard channel once the session is actually live,
   // otherwise the board tries to sync before anyone's in a call.
@@ -80,7 +81,7 @@ const RoomChat = () => {
     emitClear,
     emitShareStart,
     emitShareStop,
-  } = useWhiteboard(inSession ? roomId : null);
+  } = useWhiteboard(inSession ? roomId : null, socket);
 
   const handleJoinSession = async () => {
     setInSession(true);
@@ -94,7 +95,7 @@ const RoomChat = () => {
     setInSession(false);
   };
 
-  if (!socketReady) {
+  if (!socket) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950">
         <div className="relative">
@@ -236,6 +237,7 @@ const RoomChat = () => {
                   loadingMore={loadingMore}
                   error={chatError}
                   connected={connected}
+                  secureReady={secureReady}
                   roomName={roomName}
                 />
               </div>

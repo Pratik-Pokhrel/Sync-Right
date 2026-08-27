@@ -1,7 +1,7 @@
 // Must be the mirror of server/utils/socketEvents.js.
 export const SOCKET_EVENTS = {
   // Native Socket.io
-  CONNECTION: "connection",
+  CONNECT: "connect",
   DISCONNECT: "disconnect",
   CONNECT_ERROR: "connect_error",
 
@@ -44,4 +44,10 @@ export const SOCKET_EVENTS = {
   // Whiteboard screen-share style pin (host only, broadcast to whole room)
   WHITEBOARD_SHARE_START: "whiteboard:share_start",
   WHITEBOARD_SHARE_STOP: "whiteboard:share_stop",
+
+  // E2E key relay (bidirectional, server is a dumb relay)
+  E2E_PUBLIC_KEY: "e2e:public-key",
+  E2E_REQUEST_KEYS: "e2e:request-keys",
+  E2E_PEER_KEY: "e2e:peer-key",
+  E2E_KEY_REQUEST: "e2e:key-request",
 };

@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import api from "../utils/api";
-import { getSocket } from "../utils/socket";
 import { SOCKET_EVENTS } from "../utils/socketEvents";
 import { tokenStorage } from "../utils/tokenStorage";
 
-const useWebRTC = (roomId) => {
-  const socket = getSocket();
+const useWebRTC = (roomId, socket) => {
   const currentUser = useMemo(() => tokenStorage.getUser(), []);
   const currentUserName = currentUser?.username || "You";
 

@@ -37,6 +37,7 @@ const ChatPanel = ({
   loadingMore,
   error,
   connected,
+  secureReady,
   roomName,
 }) => {
   const [draft, setDraft] = useState("");
@@ -59,7 +60,6 @@ const ChatPanel = ({
   // Scroll to bottom on first paint so the most recent messages are visible
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = (e) => {
@@ -85,7 +85,7 @@ const ChatPanel = ({
           ? `${typingList[0]} and ${typingList[1]} are typing…`
           : `${typingList[0]}, ${typingList[1]} and others are typing…`;
 
-  const canSend = connected && draft.trim().length > 0;
+  const canSend = connected && secureReady && draft.trim().length > 0;
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-2xl border border-white/20 bg-white/10 shadow-2xl shadow-slate-950/30 backdrop-blur-3xl overflow-hidden">
@@ -96,7 +96,11 @@ const ChatPanel = ({
             {roomName || "Chat"}
           </h2>
           <p className="text-xs text-slate-400">
-            {connected ? "Connected" : "Disconnected : trying to reconnect…"}
+            {!connected
+              ? "Disconnected : trying to reconnect…"
+              : secureReady
+                ? "Connected"
+                : "Connected : securing chat…"}
           </p>
         </div>
         {hasMore && (
@@ -181,8 +185,14 @@ const ChatPanel = ({
           type="text"
           value={draft}
           onChange={handleInputChange}
-          placeholder={connected ? "Type a message…" : "Reconnecting…"}
-          disabled={!connected}
+          placeholder={
+            !connected
+              ? "Reconnecting…"
+              : secureReady
+                ? "Type a message…"
+                : "Securing chat…"
+          }
+          disabled={!connected || !secureReady}
           maxLength={MAX_MESSAGE_LENGTH}
           className="flex-1 rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-60"
         />
