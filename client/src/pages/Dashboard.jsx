@@ -196,9 +196,9 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-slate-950 text-slate-100">
+    <div className="dashboard-page min-h-screen relative overflow-hidden bg-slate-950 text-slate-100">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_25%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.18),transparent_25%)]" />
-      <div className="absolute inset-0 bg-slate-950/80" />
+      <div className="dashboard-overlay absolute inset-0 bg-slate-950/80" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <header className="mb-8 flex items-center justify-between gap-4">
@@ -246,7 +246,7 @@ const Dashboard = () => {
                 ) : (
                   <div className="space-y-3">
                     {activeRooms.map((room) => (
-                      <div key={room._id} className="rounded-2xl border border-white/10 bg-slate-900/30 p-4">
+                      <div key={room._id} className="room-row-surface room-row-active rounded-2xl border border-white/10 bg-[#f5f1e9] p-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <div className="mb-1 flex items-center gap-2">
@@ -293,7 +293,7 @@ const Dashboard = () => {
                 ) : (
                   <div className="space-y-3">
                     {rooms.map((room) => (
-                      <div key={room._id} className="rounded-2xl border border-white/10 bg-slate-900/30 p-4">
+                      <div key={room._id} className="room-row-surface rounded-2xl border border-white/10 bg-[#f5f1e9] p-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <div className="mb-1 flex items-center gap-2">
@@ -412,7 +412,7 @@ const Dashboard = () => {
               <button
                 type="submit"
                 disabled={creating}
-                className="w-full cursor-pointer rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-cyan-400 hover:shadow-cyan-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full cursor-pointer rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950 transition duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {creating ? 'Creating room…' : 'Create Room'}
               </button>

@@ -97,7 +97,7 @@ const RoomChat = () => {
 
   if (!socket) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+      <div className="room-chat-page flex min-h-screen items-center justify-center bg-slate-950">
         <div className="relative">
           <div className="absolute inset-0 bg-cyan-500/15 blur-3xl" />
           <div className="relative z-10 flex flex-col items-center gap-4">
@@ -110,7 +110,7 @@ const RoomChat = () => {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-slate-950 relative overflow-hidden">
+    <div className="room-chat-page flex h-screen flex-col bg-slate-950 relative overflow-hidden">
       <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-slate-900 to-slate-950" />
       <div className="absolute -left-16 top-10 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl" />
       <div className="absolute -right-32 top-[25%] h-80 w-80 rounded-full bg-violet-500/15 blur-3xl" />

@@ -7,7 +7,7 @@ const FormInput = ({ label, type, id, name, value, onChange, placeholder, requir
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-200 mb-2">
+      <label htmlFor={id} className="form-label">
         {label}
       </label>
       <div className="relative">
@@ -18,9 +18,9 @@ const FormInput = ({ label, type, id, name, value, onChange, placeholder, requir
           value={value}
           onChange={onChange}
           required={required}
-          className={`w-full px-4 py-3 rounded-2xl border text-white bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:border-transparent ${
+          className={`form-input transition-colors focus:outline-none ${
             error
-              ? 'border-rose-400/70 bg-rose-500/10 focus:ring-rose-400'
+              ? 'form-input-error'
               : 'border-white/20 focus:ring-cyan-400'
           } ${isPasswordField ? 'pr-12' : ''} ${className}`}
           placeholder={placeholder}
@@ -30,7 +30,7 @@ const FormInput = ({ label, type, id, name, value, onChange, placeholder, requir
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
-            className="absolute inset-y-0 right-3 flex items-center text-slate-300 hover:text-white focus:outline-none"
+            className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-900 focus:outline-none"
           >
             {showPassword ? (
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5">
@@ -51,7 +51,7 @@ const FormInput = ({ label, type, id, name, value, onChange, placeholder, requir
         )}
       </div>
       {error && (
-        <p className="mt-1 text-sm text-rose-300">{error}</p>
+        <p className="mt-1 text-sm text-rose-600">{error}</p>
       )}
     </div>
   );

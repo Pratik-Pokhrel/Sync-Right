@@ -220,7 +220,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-slate-950 text-slate-100">
+    <div className="profile-page min-h-screen relative overflow-hidden bg-slate-950 text-slate-100">
       {/* Background gradients */}
       <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-slate-900 to-slate-950" />
       <div className="absolute -left-16 top-10 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl" />
