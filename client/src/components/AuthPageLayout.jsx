@@ -1,7 +1,9 @@
+import logo from '../assets/logo.ico';
+
 const AuthPageLayout = ({ title, subtitle, children }) => {
   return (
     <div className="auth-page">
-      <div className="auth-brand"><span className="brand-mark">s</span><span>sync-right</span></div>
+      <div className="auth-brand"><img src={logo} alt="Sync-Right" /></div>
       <div className="auth-layout">
         <div className="auth-intro">
           <p className="eyebrow">A calmer way to collaborate</p>

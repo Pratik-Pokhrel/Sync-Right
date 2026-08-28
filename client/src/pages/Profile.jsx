@@ -257,7 +257,7 @@ const Profile = () => {
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.06)_30%,rgba(255,255,255,0.03)_60%,transparent_100%)]" />
             <div className="relative z-10 space-y-6">
               {/* Profile Picture Section */}
-              <div className="flex flex-col items-center gap-6">
+              <div className="profile-identity flex flex-col items-center gap-6">
                 <div className="relative group">
                   <button
                     type="button"
@@ -307,7 +307,7 @@ const Profile = () => {
 
               {/* Message Display */}
               {message && (
-                <div className={`rounded-lg p-4 text-center text-sm font-medium ${
+                <div className={`profile-message rounded-lg p-4 text-center text-sm font-medium ${
                   messageType === 'success'
                     ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-200'
                     : messageType === 'error'
@@ -319,7 +319,7 @@ const Profile = () => {
               )}
 
               {/* User Details Section */}
-              <div className="space-y-4 border-t border-white/10 pt-6">
+              <div className="profile-details space-y-4 border-t border-white/10 pt-6">
                 <div>
                   <label className="block text-xs uppercase tracking-[0.3em] text-slate-400 mb-2">
                     Username
@@ -358,7 +358,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div className="space-y-4 border-t border-white/10 pt-6">
+              <div className="profile-security space-y-4 border-t border-white/10 pt-6">
                 <div>
                   <h2 className="text-lg font-semibold text-white">Two-factor authentication</h2>
                   <p className="mt-1 text-sm text-slate-300">
@@ -414,7 +414,7 @@ const Profile = () => {
                       maxLength={6}
                       required
                       className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-300"
-                      placeholder="123456"
+                      placeholder="e.g.123456"
                     />
                     <div className="flex gap-3">
                       <button
@@ -461,7 +461,7 @@ const Profile = () => {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
               <div
                 ref={modalRef}
-                className="relative max-w-2xl w-full bg-slate-900 rounded-2xl overflow-hidden shadow-2xl"
+                className="profile-picture-modal relative max-w-xl w-full rounded-2xl overflow-hidden shadow-2xl"
               >
                 {/* Close button */}
                 <button
@@ -475,25 +475,12 @@ const Profile = () => {
                 </button>
 
                 {/* Image container */}
-                <div className="relative bg-slate-950 flex items-center justify-center" style={{ maxHeight: '80vh' }}>
+                <div className="relative flex items-center justify-center bg-slate-950 p-3" style={{ maxHeight: '70vh' }}>
                   <img
                     src={avatarUrl || getAvatarUrl(user)}
                     alt="Profile Full View"
-                    className="w-full h-full object-contain"
+                    className="max-h-[66vh] max-w-full object-contain"
                   />
-                </div>
-
-                {/* Footer with user info */}
-                <div className="bg-slate-800/50 backdrop-blur-sm p-4 border-t border-white/10">
-                  <div className="text-center">
-                    <h2 className="text-lg font-semibold text-white">{getDisplayName(user)}</h2>
-                    <p className="text-sm text-slate-300">{user?.email}</p>
-                  </div>
-                </div>
-
-                {/* Keyboard hint */}
-                <div className="absolute bottom-4 right-4 text-xs text-slate-400">
-                  Press ESC to close
                 </div>
               </div>
             </div>

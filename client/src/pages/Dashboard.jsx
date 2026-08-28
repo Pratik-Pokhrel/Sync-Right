@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { getAvatarUrl, getDisplayName } from '../utils/avatar';
+import { getDisplayName } from '../utils/avatar';
 import { connectSocket } from '../utils/socket';
 import { tokenStorage } from '../utils/tokenStorage';
 import FormInput from '../components/FormInput';
+import JoinRoomDialog from '../components/JoinRoomDialog';
+
+const MY_ROOM_IDS_KEY = 'sync-right-my-room-ids';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [avatarUrl, setAvatarUrl] = useState('');
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,6 +25,9 @@ const Dashboard = () => {
   const [joinPassword, setJoinPassword] = useState({});
   const [activeJoinId, setActiveJoinId] = useState(null);
   const [extraActiveRooms, setExtraActiveRooms] = useState([]);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [joiningById, setJoiningById] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const currentUser = useMemo(() => tokenStorage.getUser(), []);
   const currentUserId = currentUser?.id;
@@ -84,7 +89,6 @@ const Dashboard = () => {
         const response = await api.get('/auth/me');
         const currentUserData = response.data?.user;
         setUser(currentUserData);
-        setAvatarUrl(getAvatarUrl(currentUserData));
       } catch (error) {
         console.error('Failed to fetch current user', error);
       }
@@ -122,8 +126,17 @@ const Dashboard = () => {
       });
 
       const createdRoom = createResponse.data.room;
-      await api.post(`/rooms/join/${createdRoom.roomId}`, {
+      const joinResponse = await api.post(`/rooms/join/${createdRoom.roomId}`, {
         password: createForm.password || undefined,
+      });
+      const joinedRoom = joinResponse.data.room;
+      const storedRoomIds = JSON.parse(localStorage.getItem(MY_ROOM_IDS_KEY) || '[]');
+      if (!storedRoomIds.includes(joinedRoom.roomId || joinedRoom._id)) {
+        localStorage.setItem(MY_ROOM_IDS_KEY, JSON.stringify([...storedRoomIds, joinedRoom.roomId || joinedRoom._id]));
+      }
+      setExtraActiveRooms((prev) => {
+        if (prev.some((room) => room._id === joinedRoom._id)) return prev;
+        return [...prev, joinedRoom];
       });
 
       setSuccess('Room created and entered successfully');
@@ -167,6 +180,37 @@ const Dashboard = () => {
     }
   };
 
+  const handleJoinById = async (roomId, password) => {
+    setJoiningById(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await api.post(`/rooms/join/${roomId}`, { password: password || undefined });
+      const joinedRoom = response.data.room;
+      setExtraActiveRooms((prev) => {
+        if (prev.some((room) => room._id === joinedRoom._id)) return prev;
+        return [...prev, joinedRoom];
+      });
+      setSuccess(`Joined room “${joinedRoom.name}” successfully`);
+      setJoinDialogOpen(false);
+      fetchRooms();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to join room');
+    } finally {
+      setJoiningById(false);
+    }
+  };
+
+  const handleCopyRoomId = async (roomId) => {
+    try {
+      await navigator.clipboard.writeText(roomId);
+      setSuccess('Room ID copied to clipboard');
+    } catch {
+      setError('Unable to copy room ID');
+    }
+  };
+
   const handleLeave = async (room) => {
     setError('');
     setSuccess('');
@@ -207,16 +251,23 @@ const Dashboard = () => {
             <h1 className="text-3xl font-semibold text-white sm:text-4xl">{getDisplayName(user)}</h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="dashboard-menu-wrap">
             <button
               type="button"
-              onClick={() => navigate('/profile')}
-              className="group relative flex h-14 w-14 items-center justify-center overflow-hidden cursor-pointer rounded-full border border-white/20 bg-slate-900/70 shadow-lg shadow-slate-950/40 transition duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.04] hover:border-cyan-300/60 hover:shadow-cyan-500/10"
-              title="View profile"
+              aria-label="Open navigation menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((isOpen) => !isOpen)}
+              className="dashboard-menu-button"
             >
-              <img src={avatarUrl || getAvatarUrl(user)} alt="Profile" className="h-full w-full object-cover" />
-              <span className="absolute inset-0 bg-slate-950/20 opacity-0 transition group-hover:opacity-100" />
+              <span aria-hidden="true">...</span>
             </button>
+            {menuOpen && (
+              <nav className="dashboard-menu" aria-label="Main navigation">
+                <button type="button" onClick={() => { setJoinDialogOpen(true); setMenuOpen(false); }}>Join a Room</button>
+                <button type="button" onClick={() => { navigate('/rooms'); setMenuOpen(false); }}>My Rooms</button>
+                <button type="button" onClick={() => { navigate('/profile'); setMenuOpen(false); }}>My Profile</button>
+              </nav>
+            )}
           </div>
         </header>
 
@@ -258,6 +309,18 @@ const Dashboard = () => {
                               )}
                             </div>
                             <p className="text-sm text-slate-300">Hosted by {room.host?.username || getHostName(room)}</p>
+                            {room.host?._id === currentUserId && (
+                              <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+                                <span>Room ID: {room.roomId || room._id}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyRoomId(room.roomId || room._id)}
+                                  className="font-semibold text-cyan-200 hover:text-cyan-100"
+                                >
+                                  Copy ID
+                                </button>
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-2">
@@ -424,6 +487,12 @@ const Dashboard = () => {
           </aside>
         </div>
       </div>
+      <JoinRoomDialog
+        open={joinDialogOpen}
+        onClose={() => setJoinDialogOpen(false)}
+        onSubmit={handleJoinById}
+        loading={joiningById}
+      />
     </div>
   );
 };

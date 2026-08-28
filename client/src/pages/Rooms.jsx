@@ -3,21 +3,18 @@ import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { tokenStorage } from '../utils/tokenStorage';
 import FormInput from '../components/FormInput';
+import JoinRoomDialog from '../components/JoinRoomDialog';
 
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [creating, setCreating] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    name: '',
-    password: '',
-    maxParticipants: 10,
-  });
   const [joinPassword, setJoinPassword] = useState({});
   const [activeJoinId, setActiveJoinId] = useState(null);
   const [extraActiveRooms, setExtraActiveRooms] = useState([]);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [joiningById, setJoiningById] = useState(false);
 
   const currentUser = useMemo(() => tokenStorage.getUser(), []);
   const currentUserId = currentUser?.id;
@@ -55,7 +52,7 @@ const Rooms = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await api.get('/rooms');
+      const response = await api.get('/rooms/mine');
       setRooms(response.data.rooms || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to load rooms');
@@ -67,56 +64,6 @@ const Rooms = () => {
   useEffect(() => {
     fetchRooms();
   }, []);
-
-  const handleCreateChange = (e) => {
-    const value = e.target.name === 'maxParticipants' ? Number(e.target.value) : e.target.value;
-    setCreateForm({
-      ...createForm,
-      [e.target.name]: value,
-    });
-  };
-
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    setCreating(true);
-    setError('');
-    setSuccess('');
-
-    if (!createForm.name.trim()) {
-      setError('Room name is required');
-      setCreating(false);
-      return;
-    }
-
-    try {
-      const createResponse = await api.post('/rooms/create', {
-        name: createForm.name.trim(),
-        password: createForm.password || undefined,
-        maxParticipants: createForm.maxParticipants,
-      });
-
-      const createdRoom = createResponse.data.room;
-      const joinResponse = await api.post(`/rooms/join/${createdRoom.roomId}`, {
-        password: createForm.password || undefined,
-      });
-
-      const joinedRoom = joinResponse.data.room;
-      if (joinedRoom.isPrivate || !rooms.some((item) => item._id === joinedRoom._id)) {
-        setExtraActiveRooms((prev) => {
-          if (prev.some((room) => room._id === joinedRoom._id)) return prev;
-          return [...prev, joinedRoom];
-        });
-      }
-
-      setSuccess(`Room created and entered successfully`);
-      setCreateForm({ name: '', password: '', maxParticipants: 10 });
-      fetchRooms();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Unable to create room');
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handleJoin = async (room) => {
     setError('');
@@ -146,6 +93,28 @@ const Rooms = () => {
       fetchRooms();
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to join room');
+    }
+  };
+
+  const handleJoinById = async (roomId, password) => {
+    setJoiningById(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await api.post(`/rooms/join/${roomId}`, { password: password || undefined });
+      const joinedRoom = response.data.room;
+      setExtraActiveRooms((prev) => {
+        if (prev.some((room) => room._id === joinedRoom._id)) return prev;
+        return [...prev, joinedRoom];
+      });
+      setSuccess(`Joined room “${joinedRoom.name}” successfully`);
+      setJoinDialogOpen(false);
+      fetchRooms();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to join room');
+    } finally {
+      setJoiningById(false);
     }
   };
 
@@ -181,6 +150,19 @@ const Rooms = () => {
     return new Set(rooms.filter((room) => room.host?._id === currentUser?.id).map((room) => room._id));
   }, [rooms, currentUser]);
 
+  const myRooms = useMemo(() => {
+    const ownedRooms = [
+      ...rooms.filter((room) => room.host?._id === currentUserId),
+      ...extraActiveRooms.filter((room) => room.host?._id === currentUserId),
+    ];
+    const seen = new Set();
+    return ownedRooms.filter((room) => {
+      if (seen.has(room._id)) return false;
+      seen.add(room._id);
+      return true;
+    });
+  }, [rooms, extraActiveRooms, currentUserId]);
+
   return (
     <div className="rooms-page min-h-screen relative overflow-hidden bg-slate-950 text-slate-100">
       {/* Background gradients */}
@@ -193,13 +175,13 @@ const Rooms = () => {
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-sky-300/70 mb-2">Collaboration</p>
-              <h1 className="text-3xl font-semibold text-white">Rooms</h1>
-              <p className="text-slate-300">Create or join public rooms and manage your own hosted rooms.</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-sky-300/70 mb-2">Workspace</p>
+              <h1 className="text-3xl font-semibold text-white">My Rooms</h1>
+              <p className="text-slate-300">Your public and private rooms, with an ID ready to share.</p>
             </div>
             <Link
               to="/dashboard"
-              className="inline-flex items-center rounded-2xl bg-slate-700/50 border border-white/20 px-6 py-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-700/70"
+              className="rooms-back-link inline-flex items-center rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/20"
             >
               ← Back to Dashboard
             </Link>
@@ -233,6 +215,9 @@ const Rooms = () => {
                             )}
                           </div>
                           <p className="text-slate-300 mb-2">Hosted by {room.host?.username || getHostName(room)}</p>
+                          {room.host?._id === currentUserId && (
+                            <p className="mb-2 text-xs text-slate-400">Room ID: {room.roomId || room._id}</p>
+                          )}
                           <p className="text-sm text-slate-300 mb-2">
                             Participants: {room.participants?.length || 0} / {room.maxParticipants}
                           </p>
@@ -272,18 +257,17 @@ const Rooms = () => {
             </div>
           </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-          <div className="relative overflow-hidden rounded-[28px] border border-white/20 bg-white/10 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-3xl">
+        <div className="rooms-list-panel relative overflow-hidden rounded-[28px] border border-white/20 bg-white/10 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-3xl">
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.06)_30%,rgba(255,255,255,0.03)_60%,transparent_100%)]" />
             <div className="relative z-10">
-              <h2 className="text-xl font-semibold text-white mb-6">Available Rooms</h2>
+              <h2 className="text-xl font-semibold text-white mb-6">Rooms you host</h2>
               {loading ? (
                 <div className="text-slate-300">Loading rooms…</div>
-              ) : rooms.length === 0 ? (
-                <div className="text-slate-300">No rooms found yet. Create one to get started.</div>
+              ) : myRooms.length === 0 ? (
+                <div className="text-slate-300">You have not created any rooms yet.</div>
               ) : (
                 <div className="space-y-4">
-                  {rooms.map((room) => (
+                  {myRooms.map((room) => (
                     <div key={room._id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex-1">
@@ -296,6 +280,7 @@ const Rooms = () => {
                             )}
                           </div>
                           <p className="text-slate-300 mb-2">Hosted by {room.host?.username || 'Unknown'}</p>
+                          <p className="text-xs text-slate-400">Room ID: {room.roomId || room._id}</p>
                           <p className="text-sm text-slate-300 mb-2">
                             Participants: {room.participants?.length || 0} / {room.maxParticipants}
                           </p>
@@ -368,61 +353,14 @@ const Rooms = () => {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-[28px] border border-white/20 bg-white/10 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-3xl">
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.06)_30%,rgba(255,255,255,0.03)_60%,transparent_100%)]" />
-            <div className="relative z-10">
-              <h2 className="text-xl font-semibold text-white mb-6">Create a Room</h2>
-              <form onSubmit={handleCreate} className="space-y-4">
-                <FormInput
-                  label="Room Name"
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={createForm.name}
-                  onChange={handleCreateChange}
-                  placeholder="Enter room name"
-                  required
-                />
-                <FormInput
-                  label="Password (optional)"
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={createForm.password}
-                  onChange={handleCreateChange}
-                  placeholder="Private room password"
-                />
-                <div>
-                  <label htmlFor="maxParticipants" className="block text-sm font-medium text-slate-200 mb-2">
-                    Max Participants
-                  </label>
-                  <input
-                    type="number"
-                    id="maxParticipants"
-                    name="maxParticipants"
-                    min="2"
-                    max="20"
-                    value={createForm.maxParticipants}
-                    onChange={handleCreateChange}
-                    className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-slate-950 font-semibold shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {creating ? 'Creating room…' : 'Create Room'}
-                </button>
-              </form>
-              <p className="mt-4 text-sm text-slate-400">
-                Rooms are protected by password only if you set one. Public rooms are discoverable and joinable by anyone with access.
-              </p>
-            </div>
-          </div>
-        </div>
         </div>
       </div>
+      <JoinRoomDialog
+        open={joinDialogOpen}
+        onClose={() => setJoinDialogOpen(false)}
+        onSubmit={handleJoinById}
+        loading={joiningById}
+      />
     </div>
   );
 };
