@@ -34,6 +34,9 @@ export const ENV = {
   REDIS_USERNAME: process.env.REDIS_USERNAME,
   REDIS_PASSWORD: process.env.REDIS_PASSWORD,
   REDIS_TLS: process.env.REDIS_TLS === "true", // convert string to boolean
+
+  // Groq configuration
+  GROQ_API_KEY: process.env.GROQ_API_KEY,
 };
 
 // Fail fast if any required environment variables are missing
