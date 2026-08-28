@@ -5,6 +5,7 @@ import {
   leaveRoom,
   deleteRoom,
   listRooms,
+  listMyRooms,
   getRoomById,
 } from "../controllers/roomController.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -20,6 +21,7 @@ router.use(protect);
 
 router.get("/", listRooms);
 router.post("/create", validateCreateRoom, createRoom);
+router.get("/mine", listMyRooms);
 router.get("/:roomId", getRoomById);
 router.post("/join/:roomId", validateJoinRoom, joinRoom);
 router.post("/leave/:roomId", leaveRoom);

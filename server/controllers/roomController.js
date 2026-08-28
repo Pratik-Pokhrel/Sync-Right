@@ -261,6 +261,24 @@ export const joinRoom = async (req, res, next) => {
   }
 };
 
+// Find the rooms (private + public) of a user -> GET /rooms/mine
+export const listMyRooms = async (req, res, next) => {
+  try {
+    const rooms = await Room.find({ host: req.user._id })
+      .populate("host", "username")
+      .populate("participants", "username")
+      .sort({ createdAt: -1 }); // Sort rooms by creation date, newest first
+
+    return res.status(200).json({
+      success: true,
+      count: rooms.length,
+      rooms: rooms.map(formatRoom),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // LEAVE THE ROOM -> POST /rooms/leave/:roomId (protected)
 
 // Two paths :
