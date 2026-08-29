@@ -48,9 +48,15 @@ export const SOCKET_EVENTS = {
   WHITEBOARD_SHARE_START: "whiteboard:share_start",
   WHITEBOARD_SHARE_STOP: "whiteboard:share_stop",
 
+  WHITEBOARD_AI_PROMPT: "whiteboard:ai-prompt",
+
   // ------------- E2E encryption key relay ------------------ //
   E2E_PUBLIC_KEY: "e2e:public-key", // client -> server -> relayed to room as E2E_PEER_KEY
   E2E_REQUEST_KEYS: "e2e:request-keys", // client -> server : " I jus joined the room, resend the keys "
   E2E_PEER_KEY: "e2e:peer-key", // server -> client : someone's public key
   E2E_KEY_REQUEST: "e2e:key-request", // server -> client : some new client needs the key
+
+  // ------------ AI Moderation and transcript -----------//
+  CHAT_TRANSCRIPT: "chat:transcript",
+  CHAT_MODERATION_BLOCKED: "chat:moderation:blocked",
 };

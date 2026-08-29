@@ -38,6 +38,21 @@ const SessionSchema = new Schema(
       type: Number, // Duration in seconds
       default: null,
     },
+
+    summary: {
+      type: String,
+      default: null,
+    },
+
+    actionItems: {
+      type: [String],
+      default: [],
+    },
+
+    summaryGeneratedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );
