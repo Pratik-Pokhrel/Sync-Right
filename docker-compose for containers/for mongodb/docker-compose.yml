@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: mongo
+
+    restart: no
+
+    ports:
+      - "27017:27017"
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--eval",
+          "db.adminCommand('ping')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    networks:
+      - backend
+
+    stdin_open: true
+    tty: true
+
+volumes:
+  mongo_data:
+  mongo_config:
+
+networks:
+  backend:
+    driver: bridge

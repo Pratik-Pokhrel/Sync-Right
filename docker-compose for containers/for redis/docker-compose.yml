@@ -1,0 +1,61 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: YOUR_CONTAINER_NAME
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --bind
+      - 0.0.0.0
+      - --user
+      - default
+      - "off"
+      - --user
+      - "{REDIS_DB_NAME}"
+      - "on"
+      - ">{REDIS_PASSWORD}"
+      - "~*"
+      - "+@all"
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "--user", "sync-right-db", "-a", "project-sync-right-321", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+    networks:
+      - backend
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: syncright-redisinsight
+    restart: unless-stopped
+
+    ports:
+      - "5540:5540"
+
+    volumes:
+      - redisinsight_data:/data
+
+    depends_on:
+      redis:
+        condition: service_healthy
+
+    networks:
+      - backend
+
+volumes:
+  redis_data:
+  redisinsight_data:
+
+networks:
+  backend:
