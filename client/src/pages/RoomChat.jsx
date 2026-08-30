@@ -205,7 +205,7 @@ const RoomChat = () => {
                     : "border border-emerald-400/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25"
                 }`}
               >
-                🧠 Summarize
+                Summarize
               </button>
             )}
             {/* end Summarize button */}
@@ -288,6 +288,8 @@ const RoomChat = () => {
                     emitDrawing={emitDrawing}
                     emitUndo={emitUndo}
                     emitClear={emitClear}
+                    aiGenerating={aiGenerating}
+                    emitAIPrompt={emitAIPrompt}
                   />
                 </div>
               </div>

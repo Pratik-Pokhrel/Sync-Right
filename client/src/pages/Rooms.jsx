@@ -240,7 +240,7 @@ const Rooms = () => {
                             state={{ roomName: room.name }}
                             className="rounded-2xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
                           >
-                            Open Chat
+                            Open Session
                           </Link>
                           <button
                             onClick={() => handleLeave(room)}

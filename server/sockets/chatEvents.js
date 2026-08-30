@@ -188,6 +188,7 @@ export const registerChatEvents = (io, socket) => {
       isFinal: !!isFinal,
     });
   });
+
   // ----------------- room:leave --------------//
   // Explicit leave the room ( user clicked -> "leave room")
   // saves the system message to the DB

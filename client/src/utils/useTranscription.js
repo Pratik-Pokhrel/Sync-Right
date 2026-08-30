@@ -78,6 +78,7 @@ const useTranscription = (roomId) => {
       if (socket && roomId && text.trim()) {
         socket.emit(SOCKET_EVENTS.CHAT_TRANSCRIPT, {
           roomId,
+          transcript: text,
           text,
           isFinal: !!final,
         });

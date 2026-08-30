@@ -60,7 +60,10 @@ const useWhiteboard = (roomId, socket) => {
     };
 
     // clears AI loading sate if generation is failed
-    const onError = () => {
+    const onError = ({ message } = {}) => {
+      if (message) {
+        console.error("[whiteboard]", message);
+      }
       setAiGenerating(false);
     };
 
@@ -70,6 +73,7 @@ const useWhiteboard = (roomId, socket) => {
     socket.on(SOCKET_EVENTS.WHITEBOARD_CLEAR, onClear);
     socket.on(SOCKET_EVENTS.WHITEBOARD_SHARE_START, onShareStart);
     socket.on(SOCKET_EVENTS.WHITEBOARD_SHARE_STOP, onShareStop);
+    socket.on(SOCKET_EVENTS.ROOM_ERROR, onError);
 
     return () => {
       socket.off(SOCKET_EVENTS.WHITEBOARD_SYNC, onSync);
@@ -78,6 +82,7 @@ const useWhiteboard = (roomId, socket) => {
       socket.off(SOCKET_EVENTS.WHITEBOARD_CLEAR, onClear);
       socket.off(SOCKET_EVENTS.WHITEBOARD_SHARE_START, onShareStart);
       socket.off(SOCKET_EVENTS.WHITEBOARD_SHARE_STOP, onShareStop);
+      socket.off(SOCKET_EVENTS.ROOM_ERROR, onError);
     };
   }, [socket, roomId]);
 
