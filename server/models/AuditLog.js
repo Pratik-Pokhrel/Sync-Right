@@ -10,7 +10,7 @@ const AuditLogSchema = new Schema(
     action: { type: String, required: true, index: true },
     // user.login , room.deleted
 
-    targets: {
+    target: {
       type: Schema.Types.ObjectId,
       refPath: "targetModel",
       default: null,

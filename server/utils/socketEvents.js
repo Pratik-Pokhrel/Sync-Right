@@ -28,6 +28,7 @@ export const SOCKET_EVENTS = {
   WEBRTC_OFFER: "webrtc:offer", // relay SDP offer to a specific peer
   WEBRTC_ANSWER: "webrtc:answer", // relay SDP answer to specific peer
   WEBRTC_ICE_CANDIDATE: "webrtc:ice-candidate", // relay ICE candidate to specific peer
+  WEBRTC_MEDIA_STATE: "webrtc:media-state", // relay media state to specific peer
   // All these ABOVE events are reused but in opposite directions ( i.e server -> client )
 
   // --------- WebRTC ( client -> server ) ---------- //

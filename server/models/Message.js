@@ -18,7 +18,6 @@ const MessageSchema = new Schema(
       type: String,
       required: [true, "Message text is required"],
       trim: true,
-      maxlength: [1000, "Message cannot exceed 1000 characters"],
     },
     type: {
       type: String,

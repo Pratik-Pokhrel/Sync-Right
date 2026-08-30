@@ -27,12 +27,6 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"], // no inline JS, no eval
         styleSrc: ["'self'", "'unsafe-inline'"], // inline styles OK (tailwind)
-        imgSrc: [
-          "'self'",
-          "data:",
-          "https://lh3.googleusercontent.com",
-          "https://api.dicebear.com",
-        ],
         connectSrc: [
           "'self'",
           "ws://localhost:8000",

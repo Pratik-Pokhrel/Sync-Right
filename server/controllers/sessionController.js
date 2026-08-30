@@ -9,10 +9,9 @@ export const getSessionById = async (req, res, next) => {
     const session = await Session.findById(req.params.id).lean();
 
     if (!session) {
-      return (
-        res.status(404),
-        json({ success: false, message: "Session not found" })
-      );
+      return res
+        .status(404)
+        .json({ success: false, message: "Session not found" });
     }
 
     const isHost = session.host.toString() === req.user._id.toString();

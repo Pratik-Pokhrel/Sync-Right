@@ -12,7 +12,7 @@ export const getAllUsers = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
-      User.find().skip(skip).limit(limit).sort({ CreatedAt: -1 }), // created: -1 means the most recently created users will appear first in the list.
+      User.find().skip(skip).limit(limit).sort({ createdAt: -1 }), // created: -1 means the most recently created users will appear first in the list.
       User.countDocuments(), // Count the total number of users in the database for pagination metadata
     ]);
 

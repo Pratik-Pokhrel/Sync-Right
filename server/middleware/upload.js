@@ -17,10 +17,7 @@ const fileFilter = (req, file, cb) => {
   if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
     cb(null, true); // accept the file
   } else {
-    cb(
-      new Error("Only valid image formats are allowed (jpeg, png, jpg, webp)"),
-      false,
-    ); // reject the file
+    cb(new Error("Only JPEG, PNG, JPG or WEBP images are allowed"), false); // reject the file
   }
 };
 
