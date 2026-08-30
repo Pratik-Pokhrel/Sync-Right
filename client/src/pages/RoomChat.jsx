@@ -273,7 +273,7 @@ const RoomChat = () => {
 
             {/* Whiteboard pins on top of the call for every participant when the host shares it */}
             {isShared && (
-              <div className="absolute inset-x-0 top-0 z-10 flex h-[calc(100%-140px)] flex-col p-4">
+              <div className="absolute inset-x-0 top-0 bottom-0 z-0 flex flex-col p-4 pb-36">
                 <div className="mb-2 text-center text-xs text-slate-400">
                   {sharedBy?.username
                     ? `${sharedBy.username} is sharing the whiteboard`
@@ -317,12 +317,6 @@ const RoomChat = () => {
             {summaryOpen && (
               <div className="absolute right-0 top-0 z-20 h-full w-full max-w-sm border-l border-white/20 bg-slate-950/95 p-4 shadow-2xl backdrop-blur-2xl sm:w-96 overflow-y-auto">
                 <h2 className="mb-3 text-lg font-semibold text-white">Session Summary</h2>
-                <p className="mb-4 text-xs text-slate-400">
-                  This decrypts the current session's chat locally in your browser
-                  and sends only that text to the AI provider to generate a summary.
-                  It is not automatic, and not stored anywhere except the summary
-                  itself.
-                </p>
 
                 {!summaryResult && (
                   <button

@@ -56,7 +56,6 @@ export const SOCKET_EVENTS = {
   E2E_PEER_KEY: "e2e:peer-key", // server -> client : someone's public key
   E2E_KEY_REQUEST: "e2e:key-request", // server -> client : some new client needs the key
 
-  // ------------ AI Moderation and transcript -----------//
-  CHAT_TRANSCRIPT: "chat:transcript",
+  // ------------ AI Moderation -----------//
   CHAT_MODERATION_BLOCKED: "chat:moderation:blocked",
 };

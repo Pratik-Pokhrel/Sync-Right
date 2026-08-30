@@ -14,7 +14,7 @@ export const io = initSocket(server);
 setIO(io);
 
 connectDB().then(() => {
-  server.listen(ENV.PORT, () => {
+  server.listen(ENV.PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${ENV.PORT}`);
   });
 });

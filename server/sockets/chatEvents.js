@@ -173,22 +173,6 @@ export const registerChatEvents = (io, socket) => {
     });
   });
 
-  // ------------ chat:transcript ------------------//
-  /* Client captures speech locally via the Web Speech API and sends the recognized text here
-    This is a pure relay, same pattern as chat:typing, no DB write on every result
-    No E2E encryption because it's derived from live audio via WebRTC
-   */
-  socket.on(SOCKET_EVENTS.CHAT_TRANSCRIPT, ({ roomId, transcript }) => {
-    if (!roomId || !text?.trim()) return;
-    if (!socket.rooms.has(roomId)) return;
-
-    socket.to(roomId).emit(SOCKET_EVENTS.CHAT_TRANSCRIPT, {
-      user: socket.user,
-      text: text.trim(),
-      isFinal: !!isFinal,
-    });
-  });
-
   // ----------------- room:leave --------------//
   // Explicit leave the room ( user clicked -> "leave room")
   // saves the system message to the DB

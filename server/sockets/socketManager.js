@@ -12,8 +12,16 @@ import { RegisterWhiteboardEvents } from "../sockets/whiteboardEvent.js";
 export const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin:
-        ENV.CLIENT_URL || "http://localhost:5173" || "http://localhost:3000",
+      origin: [
+        "http://localhost:5173",
+        "http://192.168.1.74:5173",
+        "http://192.168.1.87:5173",
+        "http://192.168.1.92:5173",
+        "http://192.168.56.1:5173",
+        "http://127.0.0.1:5173",
+        "http://192.168.64.1:5173",
+        ENV.CLIENT_URL,
+      ],
       credentials: true, // required because auth token comes from handshake
     },
     // Optional tunings:

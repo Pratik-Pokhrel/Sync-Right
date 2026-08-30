@@ -55,9 +55,15 @@ const CallPanel = ({
   const localVideoRef = useRef(null);
 
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-    }
+    const el = localVideoRef.current;
+    if (!el || !localStream) return;
+
+    el.srcObject = localStream;
+    el.play().catch((err) => {
+      if (err.name !== "AbortError") {
+        console.warn("[webrtc] local video autoplay blocked:", err.message);
+      }
+    });
   }, [localStream]);
 
   const connectionLabel = useMemo(() => {
@@ -67,20 +73,20 @@ const CallPanel = ({
 
   if (pinned) {
     return (
-      <div className="absolute inset-x-0 bottom-0 z-10 flex h-35 items-center gap-2 overflow-x-auto border-t border-white/10 bg-slate-950/90 px-3 py-2 backdrop-blur-xl">
-        <div className="relative h-full w-32 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black">
+      <div className="absolute inset-x-0 bottom-0 z-20 flex h-35 items-center gap-2 overflow-x-auto border-t border-white/10 bg-slate-900/40 px-3 py-2 backdrop-blur-xl">
+        <div className="relative h-full w-32 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-slate-800/70 shadow-lg shadow-slate-950/30">
           <video ref={localVideoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
-          <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-slate-200">
+          <span className="absolute bottom-1 left-1 rounded bg-slate-950/70 px-1.5 py-0.5 text-[10px] text-slate-100">
             {currentUserName} (You)
           </span>
         </div>
         {remoteParticipants.map((participant) => (
           <div
             key={participant.socketId}
-            className="relative h-full w-32 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black"
+            className="relative h-full w-32 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-slate-800/70 shadow-lg shadow-slate-950/30"
           >
             <RemoteVideoTile participant={participant} compact />
-            <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-slate-200">
+            <span className="absolute bottom-1 left-1 rounded bg-slate-950/70 px-1.5 py-0.5 text-[10px] text-slate-100">
               {participant.username}
             </span>
           </div>
@@ -128,13 +134,15 @@ const CallPanel = ({
             <span>{currentUserName}</span>
             <span className="text-xs uppercase tracking-[0.2em] text-slate-500">You</span>
           </div>
-          <video
-            ref={localVideoRef}
-            autoPlay
-            playsInline
-            muted
-            className="h-56 w-full object-cover"
-          />
+          <div className="aspect-video w-full bg-black">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className="h-full w-full object-cover"
+            />
+          </div>
         </div>
 
         {remoteParticipants.length === 0 ? (
@@ -148,7 +156,9 @@ const CallPanel = ({
                 <span>{participant.username}</span>
                 <span className="text-xs uppercase tracking-[0.2em] text-slate-500">Remote</span>
               </div>
-              <RemoteVideoTile participant={participant} />
+              <div className="aspect-video w-full bg-black">
+                <RemoteVideoTile participant={participant} />
+              </div>
             </div>
           ))
         )}

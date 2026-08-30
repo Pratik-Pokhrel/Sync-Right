@@ -3,12 +3,12 @@ import { ENV } from "../config/env.js";
 
 const groq = new Groq({ apiKey: ENV.GROQ_API_KEY });
 
-const MODEL = "llama-3.3-70b-versatile"; // llm model to use
+const MODEL = "qwen/qwen3.8-27b"; // llm model to use
 
 export const askGroq = async (systemPrompt, userPrompt, jsonMode = false) => {
   const completion = await groq.chat.completions.create({
     model: MODEL,
-    message: [
+    messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
