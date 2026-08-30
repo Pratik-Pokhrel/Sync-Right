@@ -131,4 +131,47 @@ export const disable2FA = async (otp) => {
   return response.data;
 };
 
+/* Looks up the session tied to a room, so RoomChat.jsx doesn't need to
+  capture and thread the sessionId from the join response.
+ */
+export const getActiveSession = async (roomId) => {
+  const response = await api.get(`/sessions/room/${roomId}/active`);
+  return response.data; // { success, sessionId }
+};
+
+// transcript is built client-side from already-decrypted messages
+// Only the summary/actionItems that come back get persisted server-side,
+// the transcript itself is never stored.
+export const submitSessionSummary = async (sessionId, transcript) => {
+  const response = await api.post(`/sessions/${sessionId}/summarize`, {
+    transcript,
+  });
+  return response.data; // { success, summary, actionItems }
+};
+
+// Not an axios call, just builds the download URL, the browser handles
+// the actual GET + file download when the user clicks it.
+export const getSessionReportUrl = (sessionId) =>
+  `${API_BASE_URL}/sessions/${sessionId}/report`;
+
+/* protect middleware only reads the Authorization header,
+  not a cookie, so a plain window.open(getSessionReportUrl(...)) would
+  hit a 401. Use this instead, it goes through the axios instance
+ (which attaches the Bearer token) and triggers the download manually.
+*/
+export const downloadSessionReport = async (sessionId) => {
+  const response = await api.get(`/sessions/${sessionId}/report`, {
+    responseType: "blob",
+  });
+
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `session-report-${sessionId}.pdf`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
 export default api;

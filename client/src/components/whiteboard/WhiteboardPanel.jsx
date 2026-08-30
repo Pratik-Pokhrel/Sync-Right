@@ -59,6 +59,8 @@ const WhiteboardPanel = ({
   emitDrawing,
   emitUndo,
   emitClear,
+  aiGenerating = false,
+  emitAIPrompt,
 }) => {
   const mainRef = useRef(null);
   const previewRef = useRef(null);
@@ -74,6 +76,7 @@ const WhiteboardPanel = ({
   const [tool, setTool] = useState("pen");
   const [color, setColor] = useState("#1a1a1a");
   const [lineWidth, setLineWidth] = useState(5);
+  const [aiPrompt, setAiPrompt] = useState("");
 
   useEffect(() => {
     toolRef.current = tool;
@@ -119,7 +122,7 @@ const WhiteboardPanel = ({
   }, [activeStrokes, redrawPreview]);
 
   useEffect(() => {
-    if (!isHost) return; // CHANGE 2: participants don't get Ctrl+Z
+    if (!isHost) return; //  participants don't get Ctrl+Z
     const handler = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
@@ -141,7 +144,7 @@ const WhiteboardPanel = ({
 
   const onPointerDown = useCallback(
     (e) => {
-      if (!isHost) return; // CHANGE 3a
+      if (!isHost) return;
       e.preventDefault();
       isDrawing.current = true;
       currentPoints.current = [getPos(e)];
@@ -191,6 +194,15 @@ const WhiteboardPanel = ({
     },
     [isHost, redrawPreview, emitStroke],
   );
+
+  // submit handler for AI prompt bar
+  const handleAiSubmit = (e) => {
+     e.preventDefault();
+    const trimmed = aiPrompt.trim();
+    if (!trimmed || aiGenerating) return;
+    emitAIPrompt(trimmed);
+    setAiPrompt("");
+  }
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm">
@@ -271,11 +283,33 @@ const WhiteboardPanel = ({
         </div>
         </>
         ) : (
-            <span className="flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800"> {/* CHANGE 4b */}
+            <span className="flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
             👁 View only - only the host can draw
             </span>
         )}
         </div>
+
+        {/* AI prompt bar, host only */}
+      {isHost && (
+        <form onSubmit={handleAiSubmit} className="flex items-center gap-2 border-b border-amber-200 bg-white px-4 py-2">
+          <span className="text-sm shrink-0">🤖</span>
+          <input
+            type="text"
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            placeholder="Describe a diagram, e.g. 'draw a 3-step login flow'"
+            disabled={aiGenerating}
+            className="flex-1 rounded border border-amber-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-60"
+          />
+          <button
+            type="submit"
+            disabled={aiGenerating || !aiPrompt.trim()}
+            className="rounded bg-amber-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {aiGenerating ? "Generating…" : "Generate"}
+          </button>
+        </form>
+      )}
 
 
       <div className="relative flex-1 overflow-hidden bg-white">
@@ -289,11 +323,11 @@ const WhiteboardPanel = ({
           ref={previewRef}
           width={CANVAS_W}
           height={CANVAS_H}
-          className="absolute inset-0 h-full w-full" // CHANGE 4c: cursor moved to style
+          className="absolute inset-0 h-full w-full"
           style={{
             touchAction: "none",
-            pointerEvents: isHost ? "auto" : "none",                              // CHANGE 4c
-            cursor: isHost ? (tool === "eraser" ? "cell" : "crosshair") : "default", // CHANGE 4c
+            pointerEvents: isHost ? "auto" : "none",
+            cursor: isHost ? (tool === "eraser" ? "cell" : "crosshair") : "default",
           }}
           onMouseDown={onPointerDown}
           onMouseMove={onPointerMove}

@@ -45,9 +45,15 @@ export const SOCKET_EVENTS = {
   WHITEBOARD_SHARE_START: "whiteboard:share_start",
   WHITEBOARD_SHARE_STOP: "whiteboard:share_stop",
 
+  WHITEBOARD_AI_PROMPT: "whiteboard:ai-prompt",
+
   // E2E key relay (bidirectional, server is a dumb relay)
   E2E_PUBLIC_KEY: "e2e:public-key",
   E2E_REQUEST_KEYS: "e2e:request-keys",
   E2E_PEER_KEY: "e2e:peer-key",
   E2E_KEY_REQUEST: "e2e:key-request",
+
+  // ------------ AI Moderation and transcript -----------//
+  CHAT_TRANSCRIPT: "chat:transcript",
+  CHAT_MODERATION_BLOCKED: "chat:moderation:blocked",
 };

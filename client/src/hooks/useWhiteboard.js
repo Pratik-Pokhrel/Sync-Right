@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { SOCKET_EVENTS } from "../utils/socketEvents";
 
 // Pass null/undefined for roomId to keep this hook idle (e.g. before the
-// user has joined the session) — it will not touch the socket until a real
+// user has joined the session) -> it will not touch the socket until a real
 // roomId is supplied.
 const useWhiteboard = (roomId, socket) => {
   const [strokes, setStrokes] = useState([]);
   const [activeStrokes, setActiveStrokes] = useState({});
   const [isShared, setIsShared] = useState(false);
   const [sharedBy, setSharedBy] = useState(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   useEffect(() => {
     if (!socket || !roomId) return;
@@ -19,6 +20,7 @@ const useWhiteboard = (roomId, socket) => {
       setStrokes(Array.isArray(list) ? list : []);
       setActiveStrokes({});
       if (typeof shared === "boolean") setIsShared(shared);
+      setAiGenerating(false);
     };
 
     const onStroke = ({ stroke }) => {
@@ -55,6 +57,11 @@ const useWhiteboard = (roomId, socket) => {
     const onShareStop = () => {
       setIsShared(false);
       setSharedBy(null);
+    };
+
+    // clears AI loading sate if generation is failed
+    const onError = () => {
+      setAiGenerating(false);
     };
 
     socket.on(SOCKET_EVENTS.WHITEBOARD_SYNC, onSync);
@@ -102,7 +109,7 @@ const useWhiteboard = (roomId, socket) => {
     [socket, roomId],
   );
 
-  // Host-only on the server, but safe to expose unconditionally here — the
+  // Host-only on the server, but safe to expose unconditionally here -> the
   // server silently drops the event for non-hosts.
   const emitShareStart = useCallback(
     () => socket?.emit(SOCKET_EVENTS.WHITEBOARD_SHARE_START, { roomId }),
@@ -114,17 +121,32 @@ const useWhiteboard = (roomId, socket) => {
     [socket, roomId],
   );
 
+  // host types a prompt -> server generates strokes via Groq -> and broadcasts them back to the normal WHITEBOARD_SYNC event
+  const emitAIPrompt = useCallback(
+    (prompt) => {
+      if (!socket || !prompt?.trim()) return;
+      setAiGenerating(true);
+      socket.emit(SOCKET_EVENTS.WHITEBOARD_AI_PROMPT, {
+        roomId,
+        prompt: prompt.trim(),
+      });
+    },
+    [socket, roomId],
+  );
+
   return {
     strokes,
     activeStrokes,
     isShared,
     sharedBy,
+    aiGenerating,
     emitStroke,
     emitDrawing,
     emitUndo,
     emitClear,
     emitShareStart,
     emitShareStop,
+    emitAIPrompt,
   };
 };
 

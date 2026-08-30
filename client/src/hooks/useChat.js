@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../utils/api";
 import { SOCKET_EVENTS } from "../utils/socketEvents";
 import useE2E from "./useE2E";
+import { checkMessage, loadModerationModel } from "../utils/moderationClient";
 
 const TYPING_DEBOUNCE_MS = 1500; // stop-typing fires after this much inactivity
 const HISTORY_PAGE_SIZE = 50; // matches the server's default page size
@@ -91,7 +92,12 @@ const useChat = (roomId, socket) => {
     if (!socket || !roomId) return;
     let active = true;
 
-    // ── Listeners ──
+    //preload the moderation model as soon as the chat mounts, so it's warm before the person sends their first message.
+    loadModerationModel().catch((err) =>
+      console.error("[moderation] preload failed: ", err.message),
+    );
+
+    // ---- Listeners -------
 
     // Server currently emits { message: history[] } — accept either shape
     // so the client keeps working if the server is fixed to { messages }.
@@ -202,11 +208,23 @@ const useChat = (roomId, socket) => {
       }
       const trimmed = text.trim();
 
+      // ----------- Moderation Runs here (Before the encryption) -------
+      // This is the last point the plaintext exists (on client side)
+
+      const { flagged, labels } = await checkMessage(trimmed);
+      if (flagged) {
+        setError("Message flagged for review. Please try again.");
+        socket.emit(SOCKET_EVENTS.CHAT_MODERATION_BLOCKED, { roomId, labels });
+        return;
+      }
+
+      // ----------- Encryption Runs here (After the moderation) -------
       const encryptedPayload = await encryptForRoom(trimmed);
       if (!encryptedPayload) {
         setError("Unable to encrypt this message. Please try again.");
         return;
       }
+
       socket.emit(SOCKET_EVENTS.CHAT_MESSAGE, {
         roomId,
         text: encryptedPayload,

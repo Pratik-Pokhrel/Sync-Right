@@ -8,7 +8,7 @@ import useWhiteboard from "../hooks/useWhiteboard";
 import ChatPanel from "../components/chat/ChatPanel";
 import CallPanel from "../components/chat/CallPanel";
 import WhiteboardPanel from "../components/whiteboard/WhiteboardPanel";
-import api from "../utils/api";
+import api, { getActiveSession, submitSessionSummary, downloadSessionReport} from "../utils/api";
 
 const RoomChat = () => {
   const { roomId } = useParams();
@@ -22,6 +22,13 @@ const RoomChat = () => {
   // Everything else (chat drawer, whiteboard pin) only exists inside a session.
   const [inSession, setInSession] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+
+  // Summary States
+  const [sessionId, setSessionId] = useState(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
+  const [summaryResult, setSummaryResult] = useState(null);
+  const [summaryError, setSummaryError] = useState("");
 
   useEffect(() => {
     const token = tokenStorage.getToken();
@@ -75,13 +82,58 @@ const RoomChat = () => {
     activeStrokes,
     isShared,
     sharedBy,
+    aiGenerating,
     emitStroke,
     emitDrawing,
     emitUndo,
     emitClear,
     emitShareStart,
     emitShareStop,
+    emitAIPrompt,
   } = useWhiteboard(inSession ? roomId : null, socket);
+
+  // fetch the session id once we're in a live session, so the Summarize button has something to call.
+  useEffect(() => {
+    if (!inSession || !roomId) return;
+    getActiveSession(roomId).then((res) => setSessionId(res.sessionId)).catch((err) => console.error("[RoomChat] failed to fetch session: ", err));
+  }, [inSession, roomId]);
+
+  /* Builds a transcript from the "already decrypted" messages in memory (useChat resolves ciphertext to plaintext for rendering) and
+    sends just that transcript to the server for summarization. Host-only, explicit opt-in button, never automatic
+  */
+  const handleGenerateSummary = async () => {
+    if (!sessionId) {
+      setSummaryError("No active session found for this room yet.");
+      return;
+    }
+    const transcript = messages
+      .filter((m) => m.type !== "system" && m.text)
+      .map((m) => {
+        const sender =
+          typeof m.sender === "string" ? "Unknown" : m.sender?.username || "Unknown";
+        return `${sender}: ${m.text}`;
+      })
+      .join("\n");
+
+    setSummarizing(true);
+    setSummaryError("");
+    try {
+      const res = await submitSessionSummary(sessionId, transcript);
+      setSummaryResult({ summary: res.summary, actionItems: res.actionItems });
+    } catch (err) {
+      setSummaryError(err.response?.data?.message || "Failed to generate summary");
+    } finally {
+      setSummarizing(false);
+    }
+  };
+
+  // Summary Download PDF
+    const handleDownloadReport = () => {
+    if (!sessionId) return;
+    downloadSessionReport(sessionId).catch((err) =>
+      console.error("[RoomChat] report download failed:", err),
+    );
+  };
 
   const handleJoinSession = async () => {
     setInSession(true);
@@ -92,6 +144,7 @@ const RoomChat = () => {
     if (isHost && isShared) emitShareStop();
     leaveCall();
     setChatOpen(false);
+    setSummaryOpen(false);
     setInSession(false);
   };
 
@@ -140,6 +193,22 @@ const RoomChat = () => {
                 {isShared ? "Stop Sharing" : "Share Whiteboard"}
               </button>
             )}
+
+             {/* Summarize button, host only */}
+            {isHost && (
+              <button
+                type="button"
+                onClick={() => setSummaryOpen((prev) => !prev)}
+                className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                  summaryOpen
+                    ? "bg-emerald-500 text-slate-950"
+                    : "border border-emerald-400/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25"
+                }`}
+              >
+                🧠 Summarize
+              </button>
+            )}
+            {/* end Summarize button */}
             <button
               type="button"
               onClick={() => setChatOpen((prev) => !prev)}
@@ -240,6 +309,61 @@ const RoomChat = () => {
                   secureReady={secureReady}
                   roomName={roomName}
                 />
+              </div>
+            )}
+            {/* Summary Panel - Host Only */}
+            {summaryOpen && (
+              <div className="absolute right-0 top-0 z-20 h-full w-full max-w-sm border-l border-white/20 bg-slate-950/95 p-4 shadow-2xl backdrop-blur-2xl sm:w-96 overflow-y-auto">
+                <h2 className="mb-3 text-lg font-semibold text-white">Session Summary</h2>
+                <p className="mb-4 text-xs text-slate-400">
+                  This decrypts the current session's chat locally in your browser
+                  and sends only that text to the AI provider to generate a summary.
+                  It is not automatic, and not stored anywhere except the summary
+                  itself.
+                </p>
+
+                {!summaryResult && (
+                  <button
+                    type="button"
+                    onClick={handleGenerateSummary}
+                    disabled={summarizing}
+                    className="w-full rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {summarizing ? "Generating…" : "Generate Summary"}
+                  </button>
+                )}
+
+                {summaryError && (
+                  <p className="mt-3 text-sm text-rose-300">{summaryError}</p>
+                )}
+
+                {summaryResult && (
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <h3 className="mb-1 text-sm font-semibold text-emerald-300">Summary</h3>
+                      <p className="text-sm text-slate-200">{summaryResult.summary}</p>
+                    </div>
+                    <div>
+                      <h3 className="mb-1 text-sm font-semibold text-emerald-300">Action Items</h3>
+                      {summaryResult.actionItems.length ? (
+                        <ul className="list-disc space-y-1 pl-5 text-sm text-slate-200">
+                          {summaryResult.actionItems.map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-slate-400">None identified.</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleDownloadReport}
+                      className="w-full rounded-xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/25"
+                    >
+                      Download PDF Report
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
