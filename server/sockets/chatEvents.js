@@ -1,6 +1,7 @@
 import Room from "../models/Room.js";
 import Message from "../models/Message.js";
 import { SOCKET_EVENTS } from "../utils/socketEvents.js";
+import { audit } from "../utils/audit.js"; // used for moderation-blocked events
 
 const HISTORY_LIMIT = 50; // number of messages sent to a user on room:join
 
@@ -106,6 +107,10 @@ export const registerChatEvents = (io, socket) => {
 
   // After E2E implementation, this event will encrypt the message and payload carries a new parameter "encrypted"
   // when true, 'text' will be a JSON string of { [recipientUserId]: base64(IV+ciphertext) } produced at client side and server stores and relay it as is
+
+  /* Content moderation is deliberately not done here because by the time text arrives at this handler it's already E2E ciphertext
+     So the server has nothing readble to classify. That's why moderation runs on the client side
+  */
   socket.on(SOCKET_EVENTS.CHAT_MESSAGE, async ({ roomId, text, encrypted }) => {
     try {
       if (!roomId || !text?.trim()) return;
@@ -152,6 +157,37 @@ export const registerChatEvents = (io, socket) => {
     });
   });
 
+  // --------- chat:moderation_blocked ------------------//
+  /* Client side moderation blocked a message before it was ever sent/encrypted
+    This is an audit-only relay: only category labels are sent, never the message text,
+    this doesn't reintroduce a plaintext leak. Reuses the audit() utility
+  */
+  socket.on(SOCKET_EVENTS.CHAT_MODERATION_BLOCKED, ({ roomId, labels }) => {
+    if (!roomId) return;
+
+    audit("chat.moderation_blocked", {
+      actor: socket.user._id,
+      target: roomId,
+      targetModel: "room",
+      meta: { labels },
+    });
+  });
+
+  // ------------ chat:transcript ------------------//
+  /* Client captures speech locally via the Web Speech API and sends the recognized text here
+    This is a pure relay, same pattern as chat:typing, no DB write on every result
+    No E2E encryption because it's derived from live audio via WebRTC
+   */
+  socket.on(SOCKET_EVENTS.CHAT_TRANSCRIPT, ({ roomId, transcript }) => {
+    if (!roomId || !text?.trim()) return;
+    if (!socket.rooms.has(roomId)) return;
+
+    socket.to(roomId).emit(SOCKET_EVENTS.CHAT_TRANSCRIPT, {
+      user: socket.user,
+      text: text.trim(),
+      isFinal: !!isFinal,
+    });
+  });
   // ----------------- room:leave --------------//
   // Explicit leave the room ( user clicked -> "leave room")
   // saves the system message to the DB

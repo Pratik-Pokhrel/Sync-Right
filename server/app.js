@@ -12,6 +12,7 @@ import roomRoutes from "./routes/room.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import callRoutes from "./routes/call.routes.js";
+import sessionRoutes from "./routes/session.routes.js";
 
 import { csrfErrorHandler } from "./middleware/csrf.js";
 import { authLimiter, apiLimiter } from "./config/rateLimiter.js";
@@ -72,6 +73,7 @@ app.use(
       "http://192.168.56.1:5173",
       "http://127.0.0.1:5173",
       "http://192.168.64.1:5173",
+      ENV.CLIENT_URL,
     ], // The frontend's URL
     credentials: true, // Allow cookies to be sent in cross-origin requests
   }),
@@ -94,6 +96,7 @@ app.use("/admin", apiLimiter, adminRoutes); // admin-related routes like /admin/
 app.use("/rooms", apiLimiter, roomRoutes); // room related routes
 app.use("/messages", apiLimiter, messageRoutes); // message related routes
 app.use("/call", apiLimiter, callRoutes); // call related routes
+app.use("/sessions", apiLimiter, sessionRoutes); // session related routes
 
 // Health check route - useful for monitoring and testing if the server is running
 app.get("/health", (req, res) => {

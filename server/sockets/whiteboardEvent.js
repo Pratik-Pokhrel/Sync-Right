@@ -1,6 +1,7 @@
 import Room from "../models/Room.js";
 import { SOCKET_EVENTS } from "../utils/socketEvents.js";
 import { saveBoardSnapshot, getBoardSnapshot } from "../utils/boardCache.js";
+import { generateStrokesFromPrompt } from "../utils/whiteboardAI.js";
 
 const MAX_SNAPSHOT_STROKES = 200;
 
@@ -187,6 +188,56 @@ export const RegisterWhiteboardEvents = (io, socket) => {
       persist(roomId, []);
     } catch (err) {
       console.error("[whiteboard:clear]", err.message);
+    }
+  });
+
+  /* whiteboard:ai_prompt -> host describes a diagram in plain text,
+     Groq returns the stroke in the exact same shape as a hand-drawn stroke,
+     pushed through the same persist + broadcast path
+  */
+  socket.on(SOCKET_EVENTS.WHITEBOARD_AI_PROMPT, async ({ roomId, prompt }) => {
+    try {
+      if (!roomId || !prompt?.trim()) return;
+      if (!socket.rooms.has(roomId)) return;
+      if (!isHostUser(roomId, socket.user._id)) {
+        return socket.emit(SOCKET_EVENTS.ROOM_ERROR, {
+          message: "Only the host can use the AI whiteboard assistant",
+        });
+      }
+
+      const generatedStrokes = await generateStrokesFromPrompt(prompt.trim());
+      if (generatedStrokes.length === 0) {
+        return socket.emit(SOCKET_EVENTS.ROOM_ERROR, {
+          message:
+            "AI couldn't generate a diagram for that prompt, try rephrasing it",
+        });
+      }
+
+      const board = getBoard(roomId);
+      const uid = socket.user._id.toString();
+
+      const enrichedStrokes = generatedStrokes.map((s, i) => ({
+        ...s,
+        id: `ai-${socket.id}-${Date.now()}-${i}`,
+        userId: uid,
+        username: `${socket.user.username} (AI)`,
+        timestamp: new Date().toISOString(),
+      }));
+
+      board.strokes.push(...enrichedStrokes);
+
+      if (!board.userStrokeIds.has(uid)) board.userStrokeIds.set(uid, []);
+      enrichedStrokes.forEach((s) => board.userStrokeIds.get(uid).push(s.id));
+
+      io.to(roomId).emit(SOCKET_EVENTS.WHITEBOARD_SYNC, {
+        strokes: board.strokes,
+      });
+      persist(roomId, board.strokes);
+    } catch (err) {
+      console.error("[whiteboard:ai_prompt]", err.message);
+      socket.emit(SOCKET_EVENTS.ROOM_ERROR, {
+        message: "AI whiteboard generation failed",
+      });
     }
   });
 
