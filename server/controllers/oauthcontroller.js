@@ -122,7 +122,7 @@ export const googleCallback = async (req, res, next) => {
     // res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
     // res.redirect(`${ENV.CLIENT_URL}/oauth/callback`);
     // clean URL, no token
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
