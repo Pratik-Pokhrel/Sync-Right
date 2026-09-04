@@ -23,9 +23,9 @@ import { audit } from "../utils/audit.js";
 // cookie options for the refresh token
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: false, // ENV.NODE_ENV === "production", // only send cookie over HTTPS in production
-  sameSite: "lax",
-  maxAge: 3 * 24 * 60 * 60 * 1000, // match the Redis refresh-token TTL
+  secure: true, // Required over HTTPS in production
+  sameSite: ENV.NODE_ENV === "production" ? "none" : "lax", // "none" allows cross-origin cookies between frontend and backend
+  maxAge: 3 * 24 * 60 * 60 * 1000,
 };
 
 // Register Function

@@ -2,20 +2,20 @@ import axios from "axios";
 import { tokenStorage } from "./tokenStorage";
 
 export const getApiBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
+  // Set VITE_API_URL in Vercel to the Render backend URL.
+  const configuredUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  return configuredUrl.replace(/\/$/, "");
 
-  if (envUrl) {
-    return envUrl.replace(/\/$/, "");
-  }
-
-  const hostname = window.location.hostname;
-  const protocol = window.location.protocol || "http:";
-
-  if (["localhost", "127.0.0.1", "::1"].includes(hostname)) {
-    return "http://localhost:8000";
-  }
-
-  return `${protocol}//${hostname}:8000`;
+  // Previous local/LAN fallback. Keep this here for reference if local
+  // development needs to restore automatic hostname-based configuration.
+  // const hostname = window.location.hostname;
+  // const protocol = window.location.protocol || "http:";
+  //
+  // if (["localhost", "127.0.0.1", "::1"].includes(hostname)) {
+  //   return "http://localhost:8000";
+  // }
+  //
+  // return `${protocol}//${hostname}:8000`;
 };
 
 export const API_BASE_URL = getApiBaseUrl();
