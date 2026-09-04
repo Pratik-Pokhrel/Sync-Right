@@ -29,12 +29,16 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'"], // inline styles OK (tailwind)
         connectSrc: [
           "'self'",
-          "ws://localhost:8000",
-          "http://localhost:8000",
-          "ws://192.168.1.74:8000",
-          "ws://192.168.1.92:8000",
-          "http://192.168.64.1:8000",
-          "ws://192.168.64.1:8000",
+          "https:",
+          "wss:",
+          "ws:",
+          ENV.CLIENT_URL || "*",
+          // "ws://localhost:8000",
+          // "http://localhost:8000",
+          // "ws://192.168.1.74:8000",
+          // "ws://192.168.1.92:8000",
+          // "http://192.168.64.1:8000",
+          // "ws://192.168.64.1:8000",
         ], // deployed origins - adjusted for local development
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         objectSrc: ["'none'"],
@@ -58,17 +62,18 @@ app.use(
 //   );
 // }
 
+const allowedOrigins = [ENV.CLIENT_URL].filter(Boolean); // Filter out any undefined or empty values
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://192.168.1.74:5173",
-      "http://192.168.1.92:5173",
-      "http://192.168.56.1:5173",
-      "http://192.168.1.87:5173",
-      "http://192.168.64.1:5173",
-      ENV.CLIENT_URL,
-    ], // The frontend's URL
+    origin: allowedOrigins,
+    // "http://localhost:5173",
+    // "http://192.168.1.74:5173",
+    // "http://192.168.1.92:5173",
+    // "http://192.168.56.1:5173",
+    // "http://192.168.1.87:5173",
+    // "http://192.168.64.1:5173",
+
     credentials: true, // Allow cookies to be sent in cross-origin requests
   }),
 );

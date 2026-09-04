@@ -168,7 +168,7 @@ export const registerChatEvents = (io, socket) => {
     audit("chat.moderation_blocked", {
       actor: socket.user._id,
       target: roomId,
-      targetModel: "room",
+      targetModel: "Room",
       meta: { labels },
     });
   });
