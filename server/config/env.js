@@ -28,12 +28,14 @@ export const ENV = {
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
 
-  // Redis configuration
-  REDIS_HOST: process.env.REDIS_HOST,
-  REDIS_PORT: parseInt(process.env.REDIS_PORT),
-  REDIS_USERNAME: process.env.REDIS_USERNAME,
-  REDIS_PASSWORD: process.env.REDIS_PASSWORD,
-  REDIS_TLS: process.env.REDIS_TLS === "true", // convert string to boolean
+  REDIS_URL: process.env.REDIS_URL,
+
+  // Previous individual Redis settings, retained for reference only:
+  // REDIS_HOST: process.env.REDIS_HOST,
+  // REDIS_PORT: parseInt(process.env.REDIS_PORT),
+  // REDIS_USERNAME: process.env.REDIS_USERNAME,
+  // REDIS_PASSWORD: process.env.REDIS_PASSWORD,
+  // REDIS_TLS: process.env.REDIS_TLS === "true",
 
   // Groq configuration
   GROQ_API_KEY: process.env.GROQ_API_KEY,
@@ -46,6 +48,7 @@ const required = [
   "CLOUDINARY_CLOUD_NAME",
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
+  "REDIS_URL",
 ];
 required.forEach((key) => {
   if (!ENV[key])
