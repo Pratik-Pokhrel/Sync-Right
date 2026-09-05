@@ -52,6 +52,13 @@
 .dashboard-page .relative.z-10, .rooms-page .relative.z-10 { width: 100%; max-width: 1220px; box-sizing: border-box; margin-inline: auto; padding-top: 34px; padding-bottom: 50px; }
 .dashboard-page header, .rooms-page .max-w-6xl > div:first-child { border-bottom: 1px solid var(--border); padding-bottom: 24px; }
 .dashboard-page header h1, .rooms-page h1 { font: 600 42px/1.05 var(--heading); color: var(--text-h) !important; }
+@media (max-width: 640px) {
+  .dashboard-page .relative.z-10, .rooms-page .relative.z-10 { padding: 20px 14px 40px; }
+  .dashboard-page header h1, .rooms-page h1 { font-size: 28px; letter-spacing: -1px; }
+  .dashboard-page header { flex-wrap: wrap; gap: 10px; margin-bottom: 18px !important; }
+  .rooms-page .relative.overflow-hidden { padding: 20px !important; }
+  .rooms-list-panel { padding: 20px !important; }
+}
 .dashboard-page section, .rooms-page section, .dashboard-page aside, .rooms-page aside, .rooms-page .relative.overflow-hidden { border-color: #d5cabb !important; background: #faf7f0 !important; box-shadow: 0 16px 50px rgba(48,42,36,.08) !important; backdrop-filter: none !important; }
 .dashboard-page aside { background: #f0e7d8 !important; }
 .dashboard-page section.rounded-\[30px\], .dashboard-page aside.rounded-\[30px\], .rooms-page .relative.overflow-hidden { border-radius: 22px; }
@@ -92,6 +99,19 @@
 .room-chat-page .bg-slate-950\/95 { background: rgba(250,248,243,.97) !important; }
 .room-chat-page .rounded-2xl { border-radius: 12px; }
 .room-chat-page .bg-cyan-500 { background: var(--primary) !important; color: var(--primary-foreground) !important; }
+/* RoomChat responsive header */
+.room-chat-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 16px; flex-wrap: nowrap; min-height: 52px; }
+.room-chat-header-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.room-chat-header-actions > button, .room-chat-header-actions > a { white-space: nowrap; }
+@media (max-width: 600px) {
+  .room-chat-page > .relative.z-30 { flex-wrap: wrap; gap: 4px; padding: 8px 10px !important; justify-content: space-between; align-items: center; }
+  .room-chat-header-title { font-size: 13px; flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; margin: 0 4px; }
+  .room-chat-header-actions { gap: 4px; flex-wrap: wrap; flex-basis: 100%; justify-content: flex-end; }
+  .room-chat-header-actions > button, .room-chat-header-actions > a { padding: 5px 8px !important; font-size: 11px !important; }
+  .room-chat-back-btn { padding: 5px 10px !important; font-size: 11px !important; white-space: nowrap; flex-shrink: 0; }
+  /* Chat and summary panels: full-width on mobile */
+  .room-chat-page .absolute.right-0.top-0.z-20 { max-width: 100% !important; width: 100% !important; }
+}
 .profile-page { color: var(--text); background: radial-gradient(circle at 90% 0%, rgba(231,191,96,.16), transparent 24%), var(--bg) !important; }
 .profile-page > div:first-child, .profile-page > div:nth-child(2), .profile-page > div:nth-child(3), .profile-page > div:nth-child(4) { display: none; }
 .profile-page > .relative.z-10 { max-width: 1120px; margin: 0 auto; padding: 34px 28px 60px; }

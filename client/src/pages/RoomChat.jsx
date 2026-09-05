@@ -172,14 +172,14 @@ const RoomChat = () => {
       <div className="relative z-30 flex items-center justify-between border-b border-white/20 bg-white/5 backdrop-blur-md px-6 py-3">
         <Link
           to="/rooms"
-          className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/20"
+          className="room-chat-back-btn rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/20"
         >
           ← Back to Rooms
         </Link>
-        <h1 className="text-lg font-semibold text-white">{roomName || "Chat"}</h1>
+        <h1 className="room-chat-header-title text-lg font-semibold text-white">{roomName || "Chat"}</h1>
 
         {inSession ? (
-          <div className="flex items-center gap-2">
+          <div className="room-chat-header-actions flex items-center gap-2">
             {isHost && (
               <button
                 type="button"
@@ -190,7 +190,7 @@ const RoomChat = () => {
                     : "border border-violet-400/40 bg-violet-500/15 text-violet-200 hover:bg-violet-500/25"
                 }`}
               >
-                {isShared ? "Stop Sharing" : "Share Whiteboard"}
+                {isShared ? "Stop" : "Whiteboard"}
               </button>
             )}
 
@@ -205,7 +205,7 @@ const RoomChat = () => {
                     : "border border-emerald-400/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25"
                 }`}
               >
-                Summarize
+                Summary
               </button>
             )}
             {/* end Summarize button */}
@@ -225,7 +225,7 @@ const RoomChat = () => {
               onClick={handleLeaveSession}
               className="rounded-xl border border-rose-400/40 bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-500/25"
             >
-              Leave Session
+              Leave
             </button>
           </div>
         ) : (
