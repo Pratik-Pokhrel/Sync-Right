@@ -8,7 +8,6 @@ import {
   deriveSharedKey,
   encryptMessage,
   decryptMessage,
-  randomTestMessage,
 } from "../utils/e2e";
 
 // Manages the ECDH key pair for this session and a Map of derived AES
