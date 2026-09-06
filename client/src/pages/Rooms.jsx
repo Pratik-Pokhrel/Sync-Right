@@ -37,7 +37,7 @@ const Rooms = () => {
     return 'Unknown';
   };
 
-  const activeRooms = useMemo(() => {
+  const activeRooms = (() => {
     const joinedFetched = rooms.filter((room) => isParticipant(room));
     const merged = [...joinedFetched, ...extraActiveRooms];
     const seen = new Set();
@@ -46,7 +46,7 @@ const Rooms = () => {
       seen.add(room._id);
       return true;
     });
-  }, [rooms, extraActiveRooms, currentUserId]);
+  })();
 
   const fetchRooms = async () => {
     setLoading(true);
@@ -62,7 +62,8 @@ const Rooms = () => {
   };
 
   useEffect(() => {
-    fetchRooms();
+    const timer = setTimeout(fetchRooms, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleJoin = async (room) => {

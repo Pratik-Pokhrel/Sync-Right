@@ -50,7 +50,7 @@ const Dashboard = () => {
     return 'Unknown';
   };
 
-  const activeRooms = useMemo(() => {
+  const activeRooms = (() => {
     const joinedFetched = rooms.filter((room) => isParticipant(room));
     const merged = [...joinedFetched, ...extraActiveRooms];
     const seen = new Set();
@@ -59,7 +59,7 @@ const Dashboard = () => {
       seen.add(room._id);
       return true;
     });
-  }, [rooms, extraActiveRooms, currentUserId]);
+  })();
 
   const hostRoomIds = useMemo(() => {
     return new Set(rooms.filter((room) => room.host?._id === currentUser?.id).map((room) => room._id));
@@ -94,8 +94,12 @@ const Dashboard = () => {
       }
     };
 
-    fetchCurrentUser();
-    fetchRooms();
+    const timer = setTimeout(() => {
+      fetchCurrentUser();
+      fetchRooms();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleCreateChange = (e) => {

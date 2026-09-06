@@ -7,7 +7,7 @@ import api, {
   verifySetup2FA,
   disable2FA,
 } from '../utils/api';
-import { getAvatarUrl, getDisplayName } from '../utils/avatar';
+import { getAvatarUrl } from '../utils/avatar';
 import { disconnectSocket } from '../utils/socket';
 import { tokenStorage } from '../utils/tokenStorage';
 

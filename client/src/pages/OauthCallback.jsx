@@ -18,7 +18,11 @@ const OauthCallback = () => {
       return;
     }
 
-    setError(oauthError || 'Google sign-in failed. Please try again.');
+    const timer = setTimeout(() => {
+      setError(oauthError || 'Google sign-in failed. Please try again.');
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [location.search, navigate]);
 
   if (error) {

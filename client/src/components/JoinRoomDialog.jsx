@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 const JoinRoomDialog = ({ open, onClose, onSubmit, loading = false }) => {
   const [roomId, setRoomId] = useState('');
   const [password, setPassword] = useState('');
 
-  useEffect(() => {
-    if (!open) {
-      setRoomId('');
-      setPassword('');
-    }
-  }, [open]);
+  const handleClose = () => {
+    setRoomId('');
+    setPassword('');
+    onClose();
+  };
 
   if (!open) return null;
 
@@ -21,7 +20,7 @@ const JoinRoomDialog = ({ open, onClose, onSubmit, loading = false }) => {
   };
 
   return (
-    <div className="join-dialog-backdrop" role="presentation" onMouseDown={onClose}>
+    <div className="join-dialog-backdrop" role="presentation" onMouseDown={handleClose}>
       <div
         className="join-dialog"
         role="dialog"
@@ -35,7 +34,7 @@ const JoinRoomDialog = ({ open, onClose, onSubmit, loading = false }) => {
             <h2 id="join-room-title">Join a room</h2>
             <p>Use the room ID shared by the host. A password is only needed for private rooms.</p>
           </div>
-          <button type="button" className="join-dialog-close" onClick={onClose} aria-label="Close dialog">
+          <button type="button" className="join-dialog-close" onClick={handleClose} aria-label="Close dialog">
             ×
           </button>
         </div>
@@ -65,7 +64,7 @@ const JoinRoomDialog = ({ open, onClose, onSubmit, loading = false }) => {
             />
           </div>
           <div className="join-dialog-actions">
-            <button type="button" className="join-dialog-cancel" onClick={onClose}>Cancel</button>
+            <button type="button" className="join-dialog-cancel" onClick={handleClose}>Cancel</button>
             <button type="submit" className="join-dialog-submit" disabled={loading}>
               {loading ? 'Joining…' : 'Join room'}
             </button>

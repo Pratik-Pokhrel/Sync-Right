@@ -32,7 +32,7 @@ export const tokenStorage = {
       if (parts.length < 2) return null;
       const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
       return payload;
-    } catch (e) {
+    } catch {
       return null;
     }
   },

@@ -19,7 +19,8 @@ const AdminUsers = () => {
   };
 
   useEffect(() => {
-    fetchUsers(1);
+    const timer = setTimeout(() => fetchUsers(1), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const toggleActive = async (id, isActive) => {

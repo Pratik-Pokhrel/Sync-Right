@@ -1,4 +1,3 @@
-import * as tf from "@tensorflow/tfjs";
 import * as toxicity from "@tensorflow-models/toxicity";
 
 const THRESHOLD = 0.85; // confidence cutoff, can be tuned (if too strict or too loose)
