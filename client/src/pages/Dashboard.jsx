@@ -63,7 +63,7 @@ const Dashboard = () => {
 
   const hostRoomIds = useMemo(() => {
     return new Set(rooms.filter((room) => room.host?._id === currentUser?.id).map((room) => room._id));
-  }, [rooms, currentUser]);
+  }, [rooms, ]);
 
   const fetchRooms = async () => {
     setLoading(true);
