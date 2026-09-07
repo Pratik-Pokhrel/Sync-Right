@@ -295,6 +295,22 @@ npm install
 
 ---
 
+## CI/CD Pipeline
+
+- **Continuous Integration**: GitHub Actions runs lint and build checks on both
+  client and server for every push and pull request to `main`, with branch
+  protection blocking merges until checks pass.
+- **Containerization**: Multi-stage Docker builds for both services. The
+  frontend compiles via Vite and serves through Nginx; the backend runs a
+  lightweight Node Alpine image.
+- **Continuous Deployment**: On every backend change, GitHub Actions builds
+  and publishes a Docker image to Docker Hub, then triggers an automatic
+  redeploy on Render via a deploy hook, no manual deployment steps required.
+
+**Docker Hub**: [pratikpokhrel2/syncright-backend](https://hub.docker.com/r/pratikpokhrel2/syncright-backend)
+
+---
+
 ## Core Flows
 
 **Login**
@@ -329,3 +345,7 @@ Strokes are cached in Redis (`boardCache.js`) keyed by room, with a 4-hour TTL, 
 - Live captioning was attempted in an earlier phase and removed, it never worked reliably and isn't part of this build.
 - WebRTC calls use a full mesh topology, capped at 8 participants for browser connection limits, not suited for large rooms. An SFU would be needed beyond that.
 - Whiteboard drawing is host-only, participants can only view.
+
+---
+
+**Live App**: [Click Here](https://sync-right-123.vercel.app/)
