@@ -10,6 +10,8 @@ const server = http.createServer(app);
 // Attach Socket.io to the same HTTP server instance
 // "io" is the returned in case REST controllers ever need to emit events directly from controllers
 
+// COMMENT - To trigger the docker-publish.yml for docker image //
+
 export const io = initSocket(server);
 setIO(io);
 

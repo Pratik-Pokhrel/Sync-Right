@@ -25,3 +25,10 @@ jobs:
           context: ./server
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/syncright-backend:latest
+
+  trigger-render-deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
