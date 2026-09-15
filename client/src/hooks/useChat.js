@@ -211,7 +211,19 @@ const useChat = (roomId, socket) => {
       // ----------- Moderation Runs here (Before the encryption) -------
       // This is the last point the plaintext exists (on client side)
 
-      const { flagged, labels } = await checkMessage(trimmed);
+      let flagged = false;
+      let labels = [];
+      try {
+        const result = await checkMessage(trimmed);
+        flagged = result.flagged;
+        labels = result.labels;
+      } catch (err) {
+        console.error(
+          "[moderation] check failed, sending without moderation:",
+          err.message,
+        );
+      }
+
       if (flagged) {
         setError("Message flagged for review. Please try again.");
         socket.emit(SOCKET_EVENTS.CHAT_MODERATION_BLOCKED, { roomId, labels });

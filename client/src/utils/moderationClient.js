@@ -1,4 +1,5 @@
 import * as toxicity from "@tensorflow-models/toxicity";
+import * as tf from "@tensorflow/tfjs";
 
 const THRESHOLD = 0.85; // confidence cutoff, can be tuned (if too strict or too loose)
 
@@ -13,7 +14,10 @@ let loadingPromise = null;
 export const loadModerationModel = async () => {
   if (model) return model;
   if (!loadingPromise) {
-    loadingPromise = toxicity.load(THRESHOLD, []);
+    loadingPromise = (async () => {
+      await tf.ready();
+      return toxicity.load(THRESHOLD, []);
+    })();
   }
   model = await loadingPromise;
   return model;
