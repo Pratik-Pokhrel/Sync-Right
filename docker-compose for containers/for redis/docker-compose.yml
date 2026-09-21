@@ -20,14 +20,14 @@ services:
       - default
       - "off"
       - --user
-      - "{REDIS_DB_NAME}"
+      - "sync-right-db"    # Create a new user name and replace 'sync-right-db' with your desired username
       - "on"
-      - ">{REDIS_PASSWORD}"
+      - ">project-sync-right-321" # Set a password for the new user here and replace 'project-sync-right-321' with your desired password
       - "~*"
       - "+@all"
 
     healthcheck:
-      test: ["CMD", "redis-cli", "--user", "sync-right-db", "-a", "project-sync-right-321", "ping"]
+      test: ["CMD", "redis-cli", "--user", "sync-right-db", "-a", "project-sync-right-321", "ping"]    # Replace 'sync-right-db' and 'project-sync-right-321' with the username and password you set above
       interval: 5s
       timeout: 3s
       retries: 5
