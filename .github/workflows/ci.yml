@@ -6,7 +6,26 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+
   lint-server:
     runs-on: ubuntu-latest
     defaults:
@@ -19,8 +38,9 @@ jobs:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: server/package-lock.json
-      - run: npm install
-      - run: node -e "require('./app.js')" || echo "syntax check done"
+      - run: npm ci
+      - name: Check JavaScript syntax
+        run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -r -n1 node --check
 
   lint-client:
     runs-on: ubuntu-latest
@@ -34,6 +54,39 @@ jobs:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: client/package-lock.json
-      - run: npm install
+      - run: npm ci --legacy-peer-deps
       - run: npm run lint
       - run: npm run build
+
+  build-and-push:
+    needs: [changes, lint-server, lint-client]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/syncright-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/syncright-backend:${{ github.sha }}
+
+  trigger-render-deploy:
+    needs: [build-and-push, changes]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: curl --fail --show-error --silent --request POST "$RENDER_DEPLOY_HOOK"
