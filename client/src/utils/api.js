@@ -2,7 +2,6 @@ import axios from "axios";
 import { tokenStorage } from "./tokenStorage";
 
 export const getApiBaseUrl = () => {
-  // Set VITE_API_URL in Vercel to the Render backend URL.
   const configuredUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
   return configuredUrl.replace(/\/$/, "");
 
@@ -19,6 +18,7 @@ export const getApiBaseUrl = () => {
 };
 
 export const API_BASE_URL = getApiBaseUrl();
+export const API_URL = `${API_BASE_URL}/api`;
 
 let csrfToken = null;
 let csrfTokenRequest = null;
@@ -27,7 +27,7 @@ export const getCsrfToken = async () => {
   if (csrfToken) return csrfToken;
   if (!csrfTokenRequest) {
     csrfTokenRequest = axios
-      .get(`${API_BASE_URL}/auth/csrf-token`, { withCredentials: true })
+      .get(`${API_URL}/auth/csrf-token`, { withCredentials: true })
       .then((response) => {
         csrfToken = response.data?.csrfToken || null;
         return csrfToken;
@@ -41,7 +41,7 @@ export const getCsrfToken = async () => {
 
 // Create axios instance with base URL pointing to the backend server
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
   withCredentials: true, // Enable sending cookies with requests for refresh token
 });
 
@@ -76,7 +76,7 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
+          `${API_URL}/auth/refresh`,
           {},
           { withCredentials: true },
         );
@@ -152,7 +152,7 @@ export const submitSessionSummary = async (sessionId, transcript) => {
 // Not an axios call, just builds the download URL, the browser handles
 // the actual GET + file download when the user clicks it.
 export const getSessionReportUrl = (sessionId) =>
-  `${API_BASE_URL}/sessions/${sessionId}/report`;
+  `${API_URL}/sessions/${sessionId}/report`;
 
 /* protect middleware only reads the Authorization header,
   not a cookie, so a plain window.open(getSessionReportUrl(...)) would

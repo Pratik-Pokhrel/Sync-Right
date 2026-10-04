@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api, { API_BASE_URL } from '../utils/api';
+import api, { API_URL } from '../utils/api';
 import { tokenStorage } from '../utils/tokenStorage';
 import FormInput from '../components/FormInput';
 import AuthPageLayout from '../components/AuthPageLayout';
@@ -19,7 +19,7 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
-    window.location.assign(`${API_BASE_URL}/auth/google`);
+    window.location.assign(`${API_URL}/auth/google`);
   };
 
   const handleChange = (e) => {
