@@ -34,7 +34,7 @@ const OAUTH_STATE_COOKIE_OPTIONS = {
   secure: ENV.NODE_ENV === "production",
   sameSite: "lax",
   maxAge: 10 * 60 * 1000,
-  path: "/auth",
+  path: "/api/auth",
 };
 
 // 1st Step :: Redirect user to Google's consent screen

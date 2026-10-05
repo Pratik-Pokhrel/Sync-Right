@@ -19,6 +19,8 @@ import { authLimiter, apiLimiter } from "./config/rateLimiter.js";
 
 const app = express();
 
+app.set("trust proxy", 1); // trust first proxy, needed for secure cookies when behind a reverse proxy
+
 // Security and parsing middleware - kept at the top before defining routes to ensure all requests are processed through these middlewares first
 app.use(
   helmet({
@@ -89,16 +91,16 @@ app.use(morgan("dev")); // Log HTTP requests in development mode
 // }
 
 // --------------- All the routes go here ---------///
-app.use("/auth", authLimiter, authRoutes); // auth-related routes like /register, /login and so on
-app.use("/auth", authLimiter, oauthRoutes); // new -> /auth/google, /auth/google/callback
-app.use("/admin", apiLimiter, adminRoutes); // admin-related routes like /admin/users, /admin/users/:id/role and so on
-app.use("/rooms", apiLimiter, roomRoutes); // room related routes
-app.use("/messages", apiLimiter, messageRoutes); // message related routes
-app.use("/call", apiLimiter, callRoutes); // call related routes
-app.use("/sessions", apiLimiter, sessionRoutes); // session related routes
+app.use("/api/auth", authLimiter, authRoutes); // auth-related routes like /register, /login and so on
+app.use("/api/auth", authLimiter, oauthRoutes); // new -> /auth/google, /auth/google/callback
+app.use("/api/admin", apiLimiter, adminRoutes); // admin-related routes like /admin/users, /admin/users/:id/role and so on
+app.use("/api/rooms", apiLimiter, roomRoutes); // room related routes
+app.use("/api/messages", apiLimiter, messageRoutes); // message related routes
+app.use("/api/call", apiLimiter, callRoutes); // call related routes
+app.use("/api/sessions", apiLimiter, sessionRoutes); // session related routes
 
 // Health check route - useful for monitoring and testing if the server is running
-app.get("/health", (req, res) => {
+app.get(["/health", "/api/health"], (req, res) => {
   res.status(200).json({ success: true, message: "Server is healthy" });
 });
 
